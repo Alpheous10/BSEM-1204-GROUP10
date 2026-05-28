@@ -1,23 +1,28 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from database import engine
+from database import engine, Base
 import models.user
+import models.post
+import models.comment
+import models.like
 
 from routers.auth import router as auth_router
-
 from routers.posts import router as posts_router
+from routers.comments import router as comments_router
+from routers.likes import router as likes_router
 
 
-# create tables
-models.user.Base.metadata.create_all(bind=engine)
+# Create all tables
+Base.metadata.create_all(bind=engine)
 
 app = FastAPI(
-    title="Social Media API",
-    version="1.0"
+    title="Social Media Post API",
+    version="1.0",
+    description="SDG 16 - Promoting Peaceful Digital Expression"
 )
 
-# CORS
+# CORS Middleware
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -26,14 +31,17 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# include routers
+# Include routers
 app.include_router(auth_router)
 app.include_router(posts_router)
-#app.include_router(auth_router)
+app.include_router(comments_router)
+app.include_router(likes_router)
 
 
 @app.get("/")
-def root():
+async def root():
     return {
-        "message": "Welcome to Social Media API"
+        "message": "Welcome to Social Media API",
+        "sdg": "SDG 16 - Peace, Justice and Strong Institutions",
+        "description": "Building responsible digital spaces for Sierra Leone youth"
     }

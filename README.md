@@ -27,7 +27,7 @@ A FastAPI-based Social Media API built for Object-Oriented Programming 2.
 
 1. **Clone the repository**
    ```bash
-   git clone <your-repo-url>
+   git clone <https://github.com/Alpheous10/BSEM-1204-GROUP10.git>
    cd social-media-api
    ```
 

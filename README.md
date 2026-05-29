@@ -62,13 +62,13 @@ A FastAPI-based Social Media API built for Object-Oriented Programming 2.
 
 7. **Run the application**
    ```bash
-   uvicorn main:app --reload
+   uvicorn main:app --reload --port 8001
    ```
 
 8. **Access the API**
-   - API: http://localhost:8000
-   - Swagger Docs: http://localhost:8000/docs
-   - ReDoc: http://localhost:8000/redoc
+   - API: http://localhost:8001
+   - Swagger Docs: http://localhost:8001/docs
+   - ReDoc: http://localhost:8001/redoc
 
 ## API Endpoints
 
@@ -94,28 +94,39 @@ A FastAPI-based Social Media API built for Object-Oriented Programming 2.
 ## Project Structure
 
 ```
-social-media-api/
-├── main.py                 # FastAPI application entry point
-├── database.py             # Database connection and session management
-├── auth.py                 # JWT authentication and password hashing
+BSEM-1204-GROUP10/
+├── app/                    # FastAPI application package
+│   ├── __init__.py
+│   ├── main.py             # FastAPI app initialization and router setup
+│   ├── auth.py             # JWT authentication and password hashing
+│   ├── database.py         # Database connection and session management
+│   ├── models/             # SQLAlchemy database models
+│   │   ├── __init__.py
+│   │   ├── user.py         # User model
+│   │   ├── post.py         # Post model
+│   │   ├── comment.py      # Comment model
+│   │   └── like.py         # Like model
+│   ├── schemas/            # Pydantic schemas for request/response validation
+│   │   ├── __init__.py
+│   │   ├── user.py         # User Pydantic schemas
+│   │   ├── post.py         # Post Pydantic schemas
+│   │   ├── comment.py      # Comment Pydantic schemas
+│   │   └── like.py         # Like Pydantic schemas
+│   └── routers/            # API route handlers
+│       ├── __init__.py
+│       ├── auth.py         # Authentication endpoints (/auth)
+│       ├── posts.py        # Post endpoints (/posts)
+│       ├── comments.py     # Comment endpoints (/comments)
+│       └── likes.py        # Like endpoints (/likes)
+├── main.py                 # Application entry point (imports from app.main)
 ├── requirements.txt        # Python dependencies
-├── .env.example            # Environment variables template
 ├── .env                    # Environment variables (not in version control)
-├── models/
-│   ├── user.py             # User model
-│   ├── post.py             # Post model
-│   ├── comment.py          # Comment model
-│   └── like.py             # Like model
-├── schemas/
-│   ├── user.py             # User Pydantic schemas
-│   ├── post.py             # Post Pydantic schemas
-│   ├── comment.py          # Comment Pydantic schemas
-│   └── like.py             # Like Pydantic schemas
-└── routers/
-    ├── auth.py             # Authentication endpoints
-    ├── posts.py            # Post endpoints
-    ├── comments.py         # Comment endpoints
-    └── likes.py            # Like endpoints
+├── .env.example            # Environment variables template
+├── schema.sql              # Database schema SQL
+├── README.md               # This file
+├── AUTHENTICATION_GUIDE.md # JWT authentication guide
+├── POSTGRESQL_SETUP.md     # PostgreSQL setup instructions
+└── PROJECTBRIEF.md         # Project brief and requirements
 ```
 
 ## Database Schema
@@ -171,17 +182,17 @@ Or use cURL:
 
 ```bash
 # Register a user
-curl -X POST "http://localhost:8000/auth/register" \
+curl -X POST "http://localhost:8001/auth/register" \
   -H "Content-Type: application/json" \
   -d '{"username":"testuser","email":"test@example.com","password":"password123"}'
 
 # Login
-curl -X POST "http://localhost:8000/auth/login" \
-  -H "Content-Type: application/json" \
-  -d '{"username":"testuser","email":"test@example.com","password":"password123"}'
+curl -X POST "http://localhost:8001/auth/login" \
+  -H "Content-Type: application/x-www-form-urlencoded" \
+  -d 'username=testuser&password=password123'
 
 # Create a post (replace TOKEN with JWT token from login)
-curl -X POST "http://localhost:8000/posts/" \
+curl -X POST "http://localhost:8001/posts/" \
   -H "Authorization: Bearer TOKEN" \
   -H "Content-Type: application/json" \
   -d '{"title":"My First Post","content":"This is my first post on the platform"}'

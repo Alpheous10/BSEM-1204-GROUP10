@@ -1,95 +1,99 @@
 # Social Media Post API
 
-A FastAPI-based Social Media API built for Object-Oriented Programming 2.
+A FastAPI-based Social Media API built for Object-Oriented Programming 2, aligned with **SDG 16: Peace, Justice and Strong Institutions**.
 
-**SDG Alignment**: SDG 16 (Peace, Justice and Strong Institutions) - Promoting constructive digital dialogue in Sierra Leone.
+This platform enables Sierra Leone youth to express themselves responsibly and engage in constructive digital dialogue through a secure, community-driven API.
 
-## Team Members
-- **Member 1**: Database + Post CRUD
-- **Member 2**: Authentication + JWT
-- **Member 3**: Comments, Likes & Documentation
+## Team Implementation
 
-## Features
-- User Registration & Login (JWT)
-- CRUD Posts
-- Comments on Posts
-- Like/Unlike Posts
-- Protected Routes
-- Swagger Documentation (`/docs`)
+| Member | Responsibility | Status |
+|--------|-----------------|--------|
+| **Member 1** | PostgreSQL Database + Post CRUD Operations | ✅ Complete |
+| **Member 2** | JWT Authentication + User Management | ✅ Complete |
+| **Member 3** | Comments + Likes Features + Documentation | ✅ Complete |
 
-## Setup Instructions
+## Key Features
 
-### Prerequisites
-- Python 3.8+
-- PostgreSQL installed and running
+- **Secure Authentication**: JWT tokens with Argon2 password hashing
+- **CRUD Operations**: Full create, read, update, delete for posts
+- **Community Interaction**: Comment on posts and like/unlike functionality
+- **Authorization**: Protected endpoints with ownership validation
+- **Interactive Documentation**: Swagger UI and ReDoc at `/docs` and `/redoc`
+- **CORS Enabled**: Cross-origin requests supported
 
-### Installation Steps
+## Prerequisites
 
-1. **Clone the repository**
-   ```bash
-   git clone <your-repo-url>
-   cd social-media-api
-   ```
+- **Python 3.8+** (tested with Python 3.14)
+- **PostgreSQL 12+** (installed and running on localhost:5432)
+- **pip** (Python package manager)
 
-2. **Create PostgreSQL database**
-   ```sql
-   CREATE DATABASE social_media_db;
-   ```
+## Quick Start
 
-3. **Create virtual environment (optional but recommended)**
-   ```bash
-   python -m venv venv
-   source venv/bin/activate  # On Windows: venv\Scripts\activate
-   ```
+### 1. Database Setup
+Ensure PostgreSQL is running and create the database:
+```bash
+psql -U postgres
+CREATE DATABASE social_media_db;
+\q
+```
 
-4. **Copy environment file**
-   ```bash
-   cp env.example .env
-   ```
+### 2. Environment Configuration
+```bash
+cp .env.example .env
+```
 
-5. **Update `.env` with your PostgreSQL credentials**
-   ```
-   DATABASE_URL=postgresql://postgres:password@localhost:5432/social_media_db
-   SECRET_KEY=your-super-secret-key-here-change-in-production
-   ALGORITHM=HS256
-   ACCESS_TOKEN_EXPIRE_MINUTES=30
-   ```
+Edit `.env` with your PostgreSQL credentials:
+```env
+DATABASE_URL=postgresql://postgres:your_password@localhost:5432/social_media_db
+SECRET_KEY=your-secret-key-min-32-chars-recommended
+ALGORITHM=HS256
+ACCESS_TOKEN_EXPIRE_MINUTES=30
+```
 
-6. **Install dependencies**
-   ```bash
-   pip install -r requirements.txt
-   ```
+### 3. Install Dependencies
+```bash
+pip install -r requirements.txt
+```
 
-7. **Run the application**
-   ```bash
-   uvicorn main:app --reload --port 8001
-   ```
+### 4. Run the Server
+```bash
+uvicorn main:app --reload --port 8001
+```
 
-8. **Access the API**
-   - API: http://localhost:8001
-   - Swagger Docs: http://localhost:8001/docs
-   - ReDoc: http://localhost:8001/redoc
+The API will be available at `http://localhost:8001`
+
+### 5. Access Documentation
+- **Swagger UI**: http://localhost:8001/docs
+- **ReDoc**: http://localhost:8001/redoc
 
 ## API Endpoints
 
-### Authentication
-- **POST** `/auth/register` - Register a new user
-- **POST** `/auth/login` - Login and get JWT token
+### Authentication (No Auth Required)
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/auth/register` | Register a new user (username, email, password) |
+| POST | `/auth/login` | Login with username & password, returns JWT token |
 
-### Posts
-- **POST** `/posts/` - Create a new post (protected)
-- **GET** `/posts/` - Get all posts
-- **GET** `/posts/{post_id}` - Get a specific post
-- **PUT** `/posts/{post_id}` - Update a post (owner only)
-- **DELETE** `/posts/{post_id}` - Delete a post (owner only)
+### Posts (Protected Endpoints - Require JWT Token)
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/posts/` | Create a new post (auth required) |
+| GET | `/posts/` | Retrieve all posts (public) |
+| GET | `/posts/{post_id}` | Get a specific post by ID (public) |
+| PUT | `/posts/{post_id}` | Update a post (owner only, auth required) |
+| DELETE | `/posts/{post_id}` | Delete a post (owner only, auth required) |
 
-### Comments
-- **POST** `/comments/?post_id={post_id}` - Create a comment on a post (protected)
-- **GET** `/comments/post/{post_id}` - Get all comments for a post
+### Comments (Protected Endpoints - Require JWT Token)
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/comments/?post_id={id}` | Add comment to post (auth required) |
+| GET | `/comments/post/{post_id}` | Get all comments for a post (public) |
 
-### Likes
-- **POST** `/likes/{post_id}` - Like a post (protected)
-- **DELETE** `/likes/{post_id}` - Unlike a post (protected)
+### Likes (Protected Endpoints - Require JWT Token)
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/likes/{post_id}` | Like a post (prevents duplicate likes) |
+| DELETE | `/likes/{post_id}` | Remove like from post |
 
 ## Project Structure
 
@@ -132,82 +136,154 @@ BSEM-1204-GROUP10/
 ## Database Schema
 
 ### Users Table
-- `id` (PK): Primary key
-- `username` (UNIQUE): User's username
-- `email` (UNIQUE): User's email
-- `hashed_password`: Hashed password
+| Column | Type | Constraints |
+|--------|------|-------------|
+| `id` | INTEGER | PRIMARY KEY, auto-increment |
+| `username` | STRING | UNIQUE, NOT NULL |
+| `email` | STRING | UNIQUE, NOT NULL |
+| `hashed_password` | STRING | NOT NULL (Argon2-hashed) |
 
 ### Posts Table
-- `id` (PK): Primary key
-- `title`: Post title
-- `content`: Post content
-- `user_id` (FK): User who created the post
-- `created_at`: Timestamp of creation
-- `updated_at`: Timestamp of last update
+| Column | Type | Constraints |
+|--------|------|-------------|
+| `id` | INTEGER | PRIMARY KEY, auto-increment |
+| `title` | STRING | NOT NULL |
+| `content` | TEXT | NOT NULL |
+| `user_id` | INTEGER | FOREIGN KEY → users.id |
+| `created_at` | DATETIME | NOT NULL, auto-set |
+| `updated_at` | DATETIME | NOT NULL, auto-update |
 
 ### Comments Table
-- `id` (PK): Primary key
-- `content`: Comment text
-- `post_id` (FK): Post being commented on
-- `user_id` (FK): User who commented
-- `created_at`: Timestamp of creation
+| Column | Type | Constraints |
+|--------|------|-------------|
+| `id` | INTEGER | PRIMARY KEY, auto-increment |
+| `content` | TEXT | NOT NULL |
+| `post_id` | INTEGER | FOREIGN KEY → posts.id |
+| `user_id` | INTEGER | FOREIGN KEY → users.id |
+| `created_at` | DATETIME | NOT NULL, auto-set |
 
 ### Likes Table
-- `id` (PK): Primary key
-- `post_id` (FK): Post being liked
-- `user_id` (FK): User who liked
-- `created_at`: Timestamp of creation
-- **Constraint**: Unique combination of post_id and user_id (one like per user per post)
+| Column | Type | Constraints |
+|--------|------|-------------|
+| `id` | INTEGER | PRIMARY KEY, auto-increment |
+| `post_id` | INTEGER | FOREIGN KEY → posts.id |
+| `user_id` | INTEGER | FOREIGN KEY → users.id |
+| `created_at` | DATETIME | NOT NULL, auto-set |
+| | | UNIQUE(post_id, user_id) - Prevents duplicate likes |
 
-## SDG 16 Alignment
+## Authentication
 
-This project aligns with **SDG 16: Peace, Justice and Strong Institutions**.
+### How JWT Works in This API
 
-### Key Principles:
-- **Responsible Digital Expression**: The API provides a platform for users to express themselves responsibly through posts and comments
-- **Community Engagement**: Features like comments and likes foster constructive dialogue and community building
-- **User Authentication**: JWT-based authentication ensures secure access and accountability
-- **Data Integrity**: Relationships between users, posts, comments, and likes maintain data integrity and transparency
+1. **Register** → Receive username confirmation
+2. **Login** → Send `username` & `password` (form-encoded) → Receive `access_token`
+3. **Access Protected Routes** → Include token in Authorization header: `Bearer <token>`
+4. **Token Expiration** → 30 minutes (set in ACCESS_TOKEN_EXPIRE_MINUTES)
 
-This API serves as a tool for Sierra Leone youth to build responsible digital spaces, promoting peaceful expression and constructive engagement in digital communities.
+### Security Implementation
+
+- **Password Hashing**: Argon2 (via passlib) - resistant to GPU/ASIC attacks
+- **Token Encoding**: HS256 with SECRET_KEY
+- **CORS**: Enabled for all origins (`*`)
+- **Ownership Validation**: Only post owners can update/delete their own posts
 
 ## Testing
 
-You can test the API using the built-in Swagger UI at:
-```
-http://localhost:8000/docs
-```
+### Using Swagger UI (Recommended)
+Navigate to: **http://localhost:8001/docs**
 
-Or use cURL:
+1. Click **"Authorize"** button
+2. Enter username and password
+3. Click **"Authorize"** to get a token
+4. Try out endpoints directly in the interface
 
+### Using cURL
+
+**1. Register a user**
 ```bash
-# Register a user
 curl -X POST "http://localhost:8001/auth/register" \
   -H "Content-Type: application/json" \
-  -d '{"username":"testuser","email":"test@example.com","password":"password123"}'
+  -d '{
+    "username": "khalil",
+    "email": "khalil@example.com",
+    "password": "mypassword123"
+  }'
+```
 
-# Login
+**2. Login (OAuth2 form-encoded)**
+```bash
 curl -X POST "http://localhost:8001/auth/login" \
   -H "Content-Type: application/x-www-form-urlencoded" \
-  -d 'username=testuser&password=password123'
+  -d "username=khalil&password=mypassword123"
+```
 
-# Create a post (replace TOKEN with JWT token from login)
+Response:
+```json
+{
+  "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "token_type": "bearer"
+}
+```
+
+**3. Create a post (with JWT token)**
+```bash
 curl -X POST "http://localhost:8001/posts/" \
-  -H "Authorization: Bearer TOKEN" \
+  -H "Authorization: Bearer YOUR_TOKEN_HERE" \
   -H "Content-Type: application/json" \
-  -d '{"title":"My First Post","content":"This is my first post on the platform"}'
+  -d '{
+    "title": "SDG 16 in Action",
+    "content": "Building peaceful digital spaces for youth"
+  }'
+```
+
+**4. Get all posts**
+```bash
+curl -X GET "http://localhost:8001/posts/"
+```
+
+**5. Create a comment**
+```bash
+curl -X POST "http://localhost:8001/comments/?post_id=1" \
+  -H "Authorization: Bearer YOUR_TOKEN_HERE" \
+  -H "Content-Type: application/json" \
+  -d '{"content": "Great post!"}'
+```
+
+**6. Like a post**
+```bash
+curl -X POST "http://localhost:8001/likes/1" \
+  -H "Authorization: Bearer YOUR_TOKEN_HERE"
 ```
 
 ## Dependencies
 
-- **fastapi**: Web framework
-- **uvicorn**: ASGI server
-- **sqlalchemy**: ORM for database
-- **psycopg2-binary**: PostgreSQL adapter
-- **python-jose**: JWT token handling
-- **passlib**: Password hashing
-- **pydantic**: Data validation
-- **python-dotenv**: Environment variables management
+| Package | Purpose |
+|---------|---------|
+| **fastapi** (0.135.3) | Modern async web framework |
+| **uvicorn** (0.44.0) | ASGI server for running FastAPI |
+| **sqlalchemy** (2.0.50) | ORM for database operations |
+| **psycopg2-binary** | PostgreSQL database adapter |
+| **pydantic** | Request/response data validation |
+| **python-jose** | JWT token creation and verification |
+| **passlib** (1.7.4) | Password hashing abstraction |
+| **argon2-cffi** | Argon2 password hashing algorithm |
+| **python-dotenv** | Environment variable management |
+| **email-validator** | Email format validation in Pydantic |
+
+See `requirements.txt` for exact versions.
+
+## SDG 16: Peace, Justice and Strong Institutions
+
+**Why this matters**: Digital spaces are where youth build communities and ideas. This API ensures that platform is built on principles of security, accountability, and responsible engagement.
+
+### Implementation in This API:
+- ✅ **User Authentication & Accountability**: JWT tokens tie all actions to verified users
+- ✅ **Data Ownership & Control**: Only post owners can modify/delete their content
+- ✅ **Secure By Default**: Argon2 password hashing protects user accounts against attacks
+- ✅ **Data Integrity**: Clear foreign key relationships ensure referential integrity
+- ✅ **Community Building**: Comments and likes features enable constructive dialogue
+
+This API is a foundation for Sierra Leone youth to build responsible digital communities aligned with SDG 16.
 
 ## License
 
@@ -215,12 +291,15 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 
 ## Contributing
 
-1. Create a feature branch: `git checkout -b feature-name`
-2. Make your changes
-3. Commit: `git commit -m "feat: describe your changes"`
-4. Push: `git push origin feature-name`
-5. Create a Pull Request
+1. Fork the repository
+2. Create a feature branch: `git checkout -b feature/your-feature`
+3. Commit changes: `git commit -m "Add your feature"`
+4. Push to branch: `git push origin feature/your-feature`
+5. Open a Pull Request
 
-## Support
+## Issues & Support
 
-For issues or questions, please create an issue in the GitHub repository.
+- **API Issues**: Check Swagger docs for endpoint details at `/docs`
+- **Database Issues**: Verify PostgreSQL is running on localhost:5432
+- **Auth Issues**: Ensure token is in `Authorization: Bearer <token>` format
+- **Questions**: See AUTHENTICATION_GUIDE.md and POSTGRESQL_SETUP.md for detailed guides

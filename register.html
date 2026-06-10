@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>ConnectSL — Register</title>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:        #0d0f14;
+      --surface:   #161a23;
+      --border:    #252b38;
+      --green:     #00e676;
+      --green-dim: #00c864;
+      --text:      #e8eaf0;
+      --muted:     #7a8099;
+      --error:     #ff5252;
+      --radius:    12px;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Inter', sans-serif;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 48px 40px;
+      width: 100%;
+      max-width: 420px;
+    }
+
+    .logo {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 26px;
+      font-weight: 700;
+      color: var(--green);
+      letter-spacing: -0.5px;
+      margin-bottom: 8px;
+    }
+
+    .tagline {
+      color: var(--muted);
+      font-size: 14px;
+      margin-bottom: 36px;
+    }
+
+    h2 {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 20px;
+      font-weight: 600;
+      margin-bottom: 24px;
+    }
+
+    label {
+      display: block;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--muted);
+      margin-bottom: 6px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    input {
+      width: 100%;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 12px 14px;
+      color: var(--text);
+      font-size: 15px;
+      font-family: 'Inter', sans-serif;
+      margin-bottom: 18px;
+      transition: border-color 0.2s;
+      outline: none;
+    }
+
+    input:focus { border-color: var(--green); }
+
+    button {
+      width: 100%;
+      background: var(--green);
+      color: #0d0f14;
+      border: none;
+      border-radius: 8px;
+      padding: 13px;
+      font-size: 15px;
+      font-weight: 700;
+      font-family: 'Space Grotesk', sans-serif;
+      cursor: pointer;
+      transition: background 0.2s, transform 0.1s;
+      margin-top: 4px;
+    }
+
+    button:hover  { background: var(--green-dim); }
+    button:active { transform: scale(0.98); }
+
+    .footer-link {
+      text-align: center;
+      margin-top: 24px;
+      font-size: 14px;
+      color: var(--muted);
+    }
+
+    .footer-link a {
+      color: var(--green);
+      text-decoration: none;
+      font-weight: 500;
+    }
+
+    .footer-link a:hover { text-decoration: underline; }
+
+    .msg {
+      padding: 12px 14px;
+      border-radius: 8px;
+      font-size: 14px;
+      margin-bottom: 18px;
+      display: none;
+    }
+
+    .msg.error   { background: rgba(255,82,82,0.1); border: 1px solid var(--error); color: var(--error); display: block; }
+    .msg.success { background: rgba(0,230,118,0.1); border: 1px solid var(--green); color: var(--green); display: block; }
+
+    .sdg-footer {
+      text-align: center;
+      margin-top: 40px;
+      font-size: 12px;
+      color: var(--muted);
+      line-height: 1.6;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="card">
+    <div class="logo">ConnectSL</div>
+    <div class="tagline">Sierra Leone's open social platform</div>
+
+    <h2>Create an account</h2>
+
+    <div id="msg" class="msg"></div>
+
+    <label for="username">Username</label>
+    <input type="text" id="username" placeholder="Choose a username"/>
+
+    <label for="email">Email</label>
+    <input type="email" id="email" placeholder="Enter your email"/>
+
+    <label for="password">Password</label>
+    <input type="password" id="password" placeholder="Create a password"/>
+
+    <button onclick="handleRegister()">Create account</button>
+
+    <div class="footer-link">
+      Already have an account? <a href="/login">Log in</a>
+    </div>
+  </div>
+
+  <div class="sdg-footer">
+    🕊️ ConnectSL supports <strong>SDG 16</strong> — Peace, Justice & Strong Institutions.<br/>
+    Empowering free digital expression across Sierra Leone.
+  </div>
+
+  <script>
+    async function handleRegister() {
+      const username = document.getElementById('username').value.trim();
+      const email    = document.getElementById('email').value.trim();
+      const password = document.getElementById('password').value;
+      const msg      = document.getElementById('msg');
+      msg.className  = 'msg';
+      msg.textContent = '';
+
+      if (!username || !email || !password) {
+        msg.className   = 'msg error';
+        msg.textContent = 'Please fill in all fields.';
+        return;
+      }
+
+      try {
+        const res  = await fetch('/auth/register', {
+          method:  'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body:    JSON.stringify({ username, email, password })
+        });
+        const data = await res.json();
+
+        if (!res.ok) {
+          msg.className   = 'msg error';
+          msg.textContent = data.detail || 'Registration failed.';
+          return;
+        }
+
+        msg.className   = 'msg success';
+        msg.textContent = 'Account created! Redirecting to login...';
+        setTimeout(() => window.location.href = '/login', 1500);
+
+      } catch (err) {
+        msg.className   = 'msg error';
+        msg.textContent = 'Server error. Please try again.';
+      }
+    }
+
+    document.addEventListener('keydown', e => { if (e.key === 'Enter') handleRegister(); });
+  </script>
+</body>
+</html>

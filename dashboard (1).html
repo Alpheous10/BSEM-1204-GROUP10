@@ -1,0 +1,1050 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>ConnectSL — Dashboard</title>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg:        #0b0d12;
+      --surface:   #13161f;
+      --surface2:  #1a1f2e;
+      --border:    #222738;
+      --border2:   #2e3448;
+      --green:     #00e676;
+      --green-dim: #00c864;
+      --green-glow:rgba(0,230,118,0.1);
+      --blue:      #4d8aff;
+      --blue-dim:  rgba(77,138,255,0.1);
+      --red:       #ff5252;
+      --red-dim:   rgba(255,82,82,0.09);
+      --yellow:    #ffd740;
+      --text:      #e4e8f0;
+      --muted:     #6b7590;
+      --muted2:    #9aa0b8;
+      --radius:    14px;
+      --radius-sm: 8px;
+      --nav-h:     62px;
+      --sidebar-w: 255px;
+    }
+    html { scroll-behavior: smooth; }
+    body { background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; font-size: 15px; min-height: 100vh; }
+    button { cursor: pointer; font-family: inherit; }
+    input, textarea { font-family: inherit; }
+    ::-webkit-scrollbar { width: 5px; }
+    ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 99px; }
+
+    /* ── NAV ── */
+    .nav {
+      position: fixed; top: 0; left: 0; right: 0;
+      height: var(--nav-h);
+      background: rgba(11,13,18,0.94);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+      display: flex; align-items: center;
+      padding: 0 20px; z-index: 200; gap: 14px;
+    }
+    .nav-logo {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 21px; font-weight: 700;
+      color: var(--green); letter-spacing: -0.5px;
+      cursor: pointer; white-space: nowrap;
+    }
+    .nav-logo sub { font-size: 11px; color: var(--muted); font-weight: 400; margin-left: 6px; vertical-align: middle; }
+    .nav-search {
+      flex: 1; max-width: 320px;
+      position: relative; margin: 0 auto;
+    }
+    .nav-search input {
+      width: 100%;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 99px;
+      padding: 8px 16px 8px 36px;
+      color: var(--text); font-size: 14px;
+      outline: none; transition: border-color 0.2s;
+    }
+    .nav-search input:focus { border-color: var(--green); }
+    .nav-search .si {
+      position: absolute; left: 13px; top: 50%;
+      transform: translateY(-50%);
+      color: var(--muted); font-size: 13px; pointer-events: none;
+    }
+    .nav-right { display: flex; align-items: center; gap: 10px; margin-left: auto; }
+    .nav-avatar {
+      width: 36px; height: 36px; border-radius: 50%;
+      background: var(--green-glow); border: 2px solid var(--green);
+      display: flex; align-items: center; justify-content: center;
+      font-family: 'Space Grotesk', sans-serif; font-weight: 700;
+      font-size: 14px; color: var(--green); cursor: pointer;
+      transition: transform 0.2s;
+    }
+    .nav-avatar:hover { transform: scale(1.08); }
+    .nav-username { font-size: 14px; font-weight: 600; color: var(--text); }
+    .nav-btn {
+      padding: 7px 14px; border-radius: var(--radius-sm);
+      font-size: 13px; font-weight: 600;
+      font-family: 'Space Grotesk', sans-serif;
+      border: 1px solid var(--border); background: transparent;
+      color: var(--muted); transition: all 0.15s;
+    }
+    .nav-btn:hover { color: var(--red); border-color: var(--red); background: var(--red-dim); }
+
+    /* ── SHELL ── */
+    .shell { display: flex; margin-top: var(--nav-h); min-height: calc(100vh - var(--nav-h)); }
+
+    /* ── SIDEBAR ── */
+    .sidebar {
+      width: var(--sidebar-w); flex-shrink: 0;
+      position: sticky; top: var(--nav-h);
+      height: calc(100vh - var(--nav-h));
+      overflow-y: auto; padding: 20px 12px;
+      border-right: 1px solid var(--border);
+      display: flex; flex-direction: column; gap: 4px;
+    }
+    .sb-label {
+      font-size: 11px; font-weight: 600;
+      text-transform: uppercase; letter-spacing: 1px;
+      color: var(--muted); padding: 0 10px;
+      margin: 10px 0 4px;
+    }
+    .sb-item {
+      display: flex; align-items: center; gap: 11px;
+      padding: 10px 12px; border-radius: var(--radius-sm);
+      font-size: 14px; font-weight: 500; color: var(--muted2);
+      transition: all 0.15s; border: 1px solid transparent;
+      cursor: pointer;
+    }
+    .sb-item:hover { background: var(--surface2); color: var(--text); }
+    .sb-item.active {
+      background: var(--green-glow); color: var(--green);
+      border-color: rgba(0,230,118,0.18); font-weight: 600;
+    }
+    .sb-item .icon { font-size: 17px; width: 20px; text-align: center; }
+    .sb-sep { height: 1px; background: var(--border); margin: 6px 0; }
+    .sb-logout {
+      margin-top: auto;
+      display: flex; align-items: center; gap: 11px;
+      padding: 10px 12px; border-radius: var(--radius-sm);
+      font-size: 14px; font-weight: 500;
+      color: var(--red); cursor: pointer;
+      transition: background 0.15s;
+    }
+    .sb-logout:hover { background: var(--red-dim); }
+
+    /* ── MAIN ── */
+    .main {
+      flex: 1; max-width: 660px;
+      padding: 26px 22px 80px;
+      border-right: 1px solid var(--border);
+    }
+
+    /* ── RIGHT PANEL ── */
+    .rp {
+      width: 290px; flex-shrink: 0;
+      position: sticky; top: var(--nav-h);
+      height: calc(100vh - var(--nav-h));
+      overflow-y: auto; padding: 20px 16px;
+      display: flex; flex-direction: column; gap: 16px;
+    }
+
+    /* ── VIEWS ── */
+    .view { display: none; }
+    .view.active { display: block; }
+
+    /* ── PAGE HEAD ── */
+    .pg-head {
+      display: flex; align-items: center;
+      justify-content: space-between;
+      margin-bottom: 20px;
+    }
+    .pg-title { font-family: 'Space Grotesk', sans-serif; font-size: 20px; font-weight: 700; }
+
+    /* ── COMPOSE ── */
+    .compose {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 18px; margin-bottom: 22px;
+    }
+    .compose-row { display: flex; gap: 12px; }
+    .compose-ava {
+      width: 38px; height: 38px; border-radius: 50%;
+      background: var(--green-glow); border: 2px solid var(--green);
+      display: flex; align-items: center; justify-content: center;
+      font-family: 'Space Grotesk', sans-serif; font-weight: 700;
+      font-size: 14px; color: var(--green); flex-shrink: 0;
+    }
+    .compose-fields { flex: 1; }
+    .compose-fields input,
+    .compose-fields textarea {
+      width: 100%; background: var(--surface2);
+      border: 1px solid var(--border); border-radius: var(--radius-sm);
+      padding: 10px 13px; color: var(--text); font-size: 14px;
+      outline: none; transition: border-color 0.2s; margin-bottom: 8px;
+    }
+    .compose-fields textarea { resize: none; min-height: 76px; }
+    .compose-fields input:focus,
+    .compose-fields textarea:focus { border-color: var(--green); }
+    .compose-foot {
+      display: flex; justify-content: flex-end;
+      padding-top: 12px; border-top: 1px solid var(--border);
+    }
+
+    /* ── BUTTONS ── */
+    .btn {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 9px 18px; border-radius: var(--radius-sm);
+      font-size: 14px; font-weight: 600;
+      font-family: 'Space Grotesk', sans-serif;
+      border: none; transition: all 0.15s; white-space: nowrap;
+    }
+    .btn:active { transform: scale(0.97); }
+    .btn-sm  { padding: 6px 13px; font-size: 13px; }
+    .btn-xs  { padding: 4px 10px;  font-size: 12px; }
+    .btn-green { background: var(--green); color: #0b0d12; }
+    .btn-green:hover { background: var(--green-dim); }
+    .btn-ghost { background: transparent; color: var(--muted2); border: 1px solid var(--border); }
+    .btn-ghost:hover { color: var(--text); border-color: var(--border2); }
+    .btn-red   { background: transparent; color: var(--red); border: 1px solid transparent; }
+    .btn-red:hover { background: var(--red-dim); border-color: var(--red); }
+    .btn-blue  { background: var(--blue-dim); color: var(--blue); border: 1px solid transparent; }
+    .btn-blue:hover { border-color: var(--blue); }
+
+    /* ── POST CARD ── */
+    .post-card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 18px; margin-bottom: 14px;
+      transition: border-color 0.2s;
+    }
+    .post-card:hover { border-color: var(--border2); }
+    .post-hdr { display: flex; gap: 11px; margin-bottom: 11px; }
+    .post-ava {
+      width: 40px; height: 40px; border-radius: 50%;
+      background: var(--surface2); border: 1.5px solid var(--border2);
+      display: flex; align-items: center; justify-content: center;
+      font-family: 'Space Grotesk', sans-serif; font-weight: 700;
+      font-size: 15px; color: var(--green); flex-shrink: 0;
+    }
+    .post-meta-wrap { flex: 1; }
+    .post-author { font-family: 'Space Grotesk', sans-serif; font-size: 14px; font-weight: 700; }
+    .post-handle { font-size: 13px; color: var(--muted); margin-left: 5px; }
+    .you-badge {
+      font-size: 11px; background: var(--green-glow);
+      color: var(--green); border: 1px solid rgba(0,230,118,0.22);
+      border-radius: 99px; padding: 2px 7px; font-weight: 600; margin-left: 7px;
+    }
+    .post-date { font-size: 12px; color: var(--muted); margin-top: 2px; }
+    .post-title {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 17px; font-weight: 700;
+      margin-bottom: 6px; line-height: 1.3;
+    }
+    .post-body {
+      font-size: 14px; color: var(--muted2);
+      line-height: 1.65; margin-bottom: 14px;
+      white-space: pre-wrap;
+    }
+
+    /* ── ACTION BAR ── */
+    .action-bar {
+      display: flex; align-items: center; gap: 7px;
+      padding-top: 13px; border-top: 1px solid var(--border);
+      flex-wrap: wrap;
+    }
+    .act-btn {
+      display: inline-flex; align-items: center; gap: 5px;
+      padding: 6px 13px; border-radius: 99px;
+      font-size: 13px; font-weight: 500;
+      border: 1px solid var(--border);
+      background: transparent; color: var(--muted);
+      transition: all 0.15s;
+    }
+    .act-btn:hover { border-color: var(--border2); color: var(--text); }
+    .like-btn:hover { border-color: #ff6b6b; color: #ff6b6b; }
+    .like-btn.liked { border-color: #ff6b6b; color: #ff6b6b; background: rgba(255,107,107,0.07); }
+    .cmt-btn:hover  { border-color: var(--blue); color: var(--blue); }
+    .cmt-btn.open   { border-color: var(--blue); color: var(--blue); background: var(--blue-dim); }
+    .owner-btns { margin-left: auto; display: flex; gap: 6px; }
+
+    /* ── COMMENTS DRAWER ── */
+    .cmt-drawer { display: none; margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--border); }
+    .cmt-drawer.open { display: block; }
+    .cmt-row { display: flex; gap: 9px; margin-bottom: 12px; animation: fadeUp 0.2s ease; }
+    @keyframes fadeUp { from { opacity:0; transform:translateY(4px); } to { opacity:1; } }
+    .cmt-ava {
+      width: 30px; height: 30px; border-radius: 50%;
+      background: var(--surface2); border: 1px solid var(--border2);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 12px; font-weight: 700; color: var(--blue);
+      flex-shrink: 0; font-family: 'Space Grotesk', sans-serif;
+    }
+    .cmt-body { flex: 1; }
+    .cmt-bubble {
+      background: var(--surface2);
+      border-radius: 0 10px 10px 10px;
+      padding: 9px 12px; display: inline-block; max-width: 100%;
+    }
+    .cmt-user { font-size: 12px; font-weight: 700; color: var(--blue); font-family: 'Space Grotesk', sans-serif; margin-bottom: 3px; }
+    .cmt-text { font-size: 13px; color: var(--muted2); line-height: 1.5; }
+    .cmt-time { font-size: 11px; color: var(--muted); margin-top: 4px; padding-left: 2px; }
+    .cmt-input-row { display: flex; gap: 8px; align-items: center; margin-top: 8px; }
+    .cmt-input-row input {
+      flex: 1; background: var(--surface2);
+      border: 1px solid var(--border); border-radius: 99px;
+      padding: 9px 16px; color: var(--text); font-size: 13px;
+      outline: none; transition: border-color 0.2s;
+    }
+    .cmt-input-row input:focus { border-color: var(--blue); }
+
+    /* ── PROFILE ── */
+    .profile-banner {
+      background: linear-gradient(135deg, #0d1a2e 0%, #0f2010 100%);
+      border: 1px solid var(--border); border-radius: var(--radius);
+      padding: 30px 26px 22px; margin-bottom: 18px;
+      position: relative; overflow: hidden;
+    }
+    .profile-banner::before {
+      content: ''; position: absolute;
+      top: -50px; right: -50px;
+      width: 200px; height: 200px; border-radius: 50%;
+      background: var(--green-glow); filter: blur(50px);
+    }
+    .p-top { display: flex; align-items: flex-end; gap: 18px; margin-bottom: 16px; }
+    .p-big-ava {
+      width: 76px; height: 76px; border-radius: 50%;
+      background: var(--green-glow); border: 3px solid var(--green);
+      display: flex; align-items: center; justify-content: center;
+      font-family: 'Space Grotesk', sans-serif; font-weight: 700;
+      font-size: 28px; color: var(--green); position: relative; z-index: 1;
+    }
+    .p-info { position: relative; z-index: 1; }
+    .p-name { font-family: 'Space Grotesk', sans-serif; font-size: 22px; font-weight: 700; margin-bottom: 3px; }
+    .p-handle { font-size: 14px; color: var(--muted); }
+    .p-stats { display: flex; gap: 26px; position: relative; z-index: 1; }
+    .p-stat-num { font-family: 'Space Grotesk', sans-serif; font-size: 22px; font-weight: 700; color: var(--green); line-height: 1; }
+    .p-stat-lbl { font-size: 12px; color: var(--muted); margin-top: 3px; }
+    .p-posts-title { font-family: 'Space Grotesk', sans-serif; font-size: 14px; font-weight: 600; margin-bottom: 14px; color: var(--muted2); }
+
+    /* ── RIGHT PANEL WIDGETS ── */
+    .widget { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; }
+    .w-title { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.7px; color: var(--muted); margin-bottom: 14px; }
+    .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .stat-box { background: var(--surface2); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 13px; text-align: center; }
+    .stat-num { font-family: 'Space Grotesk', sans-serif; font-size: 22px; font-weight: 700; color: var(--green); line-height: 1; }
+    .stat-lbl { font-size: 11px; color: var(--muted); margin-top: 4px; }
+    .trend-item {
+      display: flex; align-items: center; gap: 9px;
+      padding: 8px 0; border-bottom: 1px solid var(--border);
+      cursor: pointer; transition: opacity 0.15s;
+    }
+    .trend-item:last-child { border-bottom: none; }
+    .trend-item:hover { opacity: 0.7; }
+    .trend-num { font-family: 'Space Grotesk', sans-serif; font-size: 13px; font-weight: 700; color: var(--muted); width: 18px; flex-shrink: 0; }
+    .trend-txt { flex: 1; font-size: 13px; font-weight: 500; }
+    .trend-cnt { font-size: 11px; color: var(--muted); }
+
+    /* ── MODALS ── */
+    .overlay {
+      display: none; position: fixed; inset: 0;
+      background: rgba(0,0,0,0.72); backdrop-filter: blur(5px);
+      z-index: 400; align-items: center; justify-content: center; padding: 24px;
+    }
+    .overlay.open { display: flex; }
+    .modal {
+      background: var(--surface); border: 1px solid var(--border2);
+      border-radius: var(--radius); padding: 30px; width: 100%; max-width: 490px;
+      animation: popIn 0.22s cubic-bezier(0.34,1.56,0.64,1);
+    }
+    @keyframes popIn { from { opacity:0; transform:scale(0.91); } to { opacity:1; transform:scale(1); } }
+    .modal-hdr { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
+    .modal-title { font-family: 'Space Grotesk', sans-serif; font-size: 18px; font-weight: 700; }
+    .modal-x {
+      width: 30px; height: 30px; border-radius: 50%;
+      background: var(--surface2); border: 1px solid var(--border);
+      color: var(--muted); font-size: 18px;
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer; transition: all 0.15s; line-height: 1;
+    }
+    .modal-x:hover { background: var(--red-dim); color: var(--red); border-color: var(--red); }
+    .modal label { display: block; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: var(--muted); margin-bottom: 6px; }
+    .modal input, .modal textarea {
+      width: 100%; background: var(--bg);
+      border: 1px solid var(--border); border-radius: var(--radius-sm);
+      padding: 11px 14px; color: var(--text); font-size: 14px;
+      outline: none; transition: border-color 0.2s; margin-bottom: 14px;
+    }
+    .modal input:focus, .modal textarea:focus { border-color: var(--green); }
+    .modal textarea { resize: none; min-height: 110px; }
+    .modal-foot { display: flex; gap: 10px; justify-content: flex-end; margin-top: 6px; }
+
+    /* ── TOAST ── */
+    .toast {
+      position: fixed; bottom: 26px; left: 50%;
+      transform: translateX(-50%) translateY(14px);
+      background: var(--surface); border: 1px solid var(--green);
+      color: var(--green); padding: 11px 22px;
+      border-radius: 99px; font-size: 14px; font-weight: 600;
+      font-family: 'Space Grotesk', sans-serif;
+      opacity: 0; transition: all 0.3s cubic-bezier(0.34,1.56,0.64,1);
+      z-index: 500; white-space: nowrap; pointer-events: none;
+    }
+    .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+    .toast.err  { border-color: var(--red); color: var(--red); }
+
+    /* ── EMPTY / SKELETON ── */
+    .empty { text-align: center; padding: 50px 20px; color: var(--muted); }
+    .empty-icon { font-size: 34px; margin-bottom: 10px; }
+    .empty p { font-size: 14px; line-height: 1.5; }
+    .skel { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 18px; margin-bottom: 14px; }
+    .skel-line { background: var(--surface2); border-radius: 4px; margin-bottom: 9px; animation: shimmer 1.4s infinite; }
+    @keyframes shimmer { 0%,100%{opacity:.5} 50%{opacity:1} }
+
+    /* ── SDG FOOTER ── */
+    .sdg-bar { background: var(--surface); border-top: 1px solid var(--border); padding: 13px 24px; text-align: center; font-size: 12px; color: var(--muted); line-height: 1.5; }
+    .sdg-bar strong { color: var(--green); }
+
+    /* ── RESPONSIVE ── */
+    @media(max-width:1080px){ .rp { display:none; } }
+    @media(max-width:700px){
+      .sidebar { display:none; }
+      .main { padding: 14px 12px 80px; border:none; }
+      .nav-search { max-width:160px; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ══ NAV ══ -->
+<nav class="nav">
+  <div class="nav-logo" onclick="switchView('feed')">ConnectSL <sub>SL</sub></div>
+
+  <div class="nav-search">
+    <span class="si">🔍</span>
+    <input type="text" id="search-input" placeholder="Search posts..." oninput="handleSearch()"/>
+  </div>
+
+  <div class="nav-right">
+    <div class="nav-avatar" id="nav-ava" onclick="switchView('profile')">U</div>
+    <span class="nav-username" id="nav-uname"></span>
+    <button class="nav-btn" onclick="logout()">🚪 Logout</button>
+  </div>
+</nav>
+
+<!-- ══ SHELL ══ -->
+<div class="shell">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="sb-label">Navigate</div>
+    <div class="sb-item active" id="sb-feed"    onclick="switchView('feed')">    <span class="icon">🏠</span> Feed</div>
+    <div class="sb-item"        id="sb-profile" onclick="switchView('profile')"> <span class="icon">👤</span> My Profile</div>
+    <div class="sb-item"        id="sb-myposts" onclick="switchView('myposts')"> <span class="icon">📝</span> My Posts</div>
+    <div class="sb-item"        id="sb-liked"   onclick="switchView('liked')">   <span class="icon">❤️</span> Liked Posts</div>
+    <div class="sb-sep"></div>
+    <div class="sb-label">Actions</div>
+    <div class="sb-item" onclick="openCreateModal()"><span class="icon">✏️</span> New Post</div>
+    <div class="sb-logout" onclick="logout()"><span class="icon">🚪</span> Log out</div>
+  </aside>
+
+  <!-- MAIN -->
+  <main class="main">
+
+    <!-- FEED VIEW -->
+    <div class="view active" id="view-feed">
+      <div class="pg-head">
+        <div class="pg-title">Feed</div>
+        <button class="btn btn-green btn-sm" onclick="openCreateModal()">✏️ New Post</button>
+      </div>
+      <div class="compose">
+        <div class="compose-row">
+          <div class="compose-ava" id="compose-ava">U</div>
+          <div class="compose-fields">
+            <input type="text"  id="c-title"   placeholder="What's the headline?"/>
+            <textarea           id="c-content" placeholder="Share something with Sierra Leone..."></textarea>
+          </div>
+        </div>
+        <div class="compose-foot">
+          <button class="btn btn-green" onclick="createPost()">Publish</button>
+        </div>
+      </div>
+      <div id="feed-list"></div>
+    </div>
+
+    <!-- PROFILE VIEW -->
+    <div class="view" id="view-profile">
+      <div class="profile-banner">
+        <div class="p-top">
+          <div class="p-big-ava" id="p-big-ava">U</div>
+          <div class="p-info">
+            <div class="p-name"   id="p-name">—</div>
+            <div class="p-handle" id="p-handle">@—</div>
+          </div>
+        </div>
+        <div class="p-stats">
+          <div><div class="p-stat-num" id="p-stat-posts">0</div><div class="p-stat-lbl">Posts</div></div>
+          <div><div class="p-stat-num" id="p-stat-likes">0</div><div class="p-stat-lbl">Likes received</div></div>
+          <div><div class="p-stat-num" id="p-stat-cmts">0</div> <div class="p-stat-lbl">Comments</div></div>
+        </div>
+      </div>
+      <div class="p-posts-title">Your posts</div>
+      <div id="profile-list"></div>
+    </div>
+
+    <!-- MY POSTS VIEW -->
+    <div class="view" id="view-myposts">
+      <div class="pg-head">
+        <div class="pg-title">My Posts</div>
+        <button class="btn btn-green btn-sm" onclick="openCreateModal()">✏️ New Post</button>
+      </div>
+      <div id="myposts-list"></div>
+    </div>
+
+    <!-- LIKED VIEW -->
+    <div class="view" id="view-liked">
+      <div class="pg-head"><div class="pg-title">Posts You Liked</div></div>
+      <div id="liked-list"></div>
+    </div>
+
+  </main>
+
+  <!-- RIGHT PANEL -->
+  <aside class="rp">
+    <div class="widget">
+      <div class="w-title">Your stats</div>
+      <div class="stat-grid">
+        <div class="stat-box"><div class="stat-num" id="rp-posts">—</div><div class="stat-lbl">My posts</div></div>
+        <div class="stat-box"><div class="stat-num" id="rp-likes">—</div><div class="stat-lbl">Likes received</div></div>
+        <div class="stat-box"><div class="stat-num" id="rp-cmts">—</div> <div class="stat-lbl">Comments</div></div>
+        <div class="stat-box"><div class="stat-num" id="rp-total">—</div><div class="stat-lbl">Total posts</div></div>
+      </div>
+    </div>
+    <div class="widget">
+      <div class="w-title">🔥 Trending</div>
+      <div id="trending-list"><p style="font-size:13px;color:var(--muted)">Loading...</p></div>
+    </div>
+    <div class="widget">
+      <div class="w-title">Our mission</div>
+      <p style="font-size:13px;color:var(--muted2);line-height:1.6">
+        🕊️ ConnectSL supports <strong style="color:var(--green)">SDG 16</strong> — Peace, Justice &amp; Strong Institutions.
+        Free, safe, inclusive digital expression for every Sierra Leonean.
+      </p>
+    </div>
+  </aside>
+
+</div>
+
+<!-- SDG FOOTER -->
+<div class="sdg-bar">
+  🌍 ConnectSL | PROG315 Group Project — Limkokwing University of Creative Technology, Sierra Leone &nbsp;·&nbsp;
+  Aligned with <strong>SDG 16</strong>: Peace, Justice &amp; Strong Institutions
+</div>
+
+<!-- EDIT MODAL -->
+<div class="overlay" id="edit-overlay">
+  <div class="modal">
+    <div class="modal-hdr">
+      <div class="modal-title">Edit post</div>
+      <div class="modal-x" onclick="closeEdit()">×</div>
+    </div>
+    <label>Title</label>
+    <input type="text" id="edit-title" placeholder="Post title"/>
+    <label>Content</label>
+    <textarea id="edit-content" placeholder="Post content"></textarea>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" onclick="closeEdit()">Cancel</button>
+      <button class="btn btn-green" onclick="submitEdit()">Save changes</button>
+    </div>
+  </div>
+</div>
+
+<!-- CREATE MODAL -->
+<div class="overlay" id="create-overlay">
+  <div class="modal">
+    <div class="modal-hdr">
+      <div class="modal-title">New post</div>
+      <div class="modal-x" onclick="closeCreateModal()">×</div>
+    </div>
+    <label>Title</label>
+    <input type="text" id="m-title" placeholder="What's the headline?"/>
+    <label>Content</label>
+    <textarea id="m-content" placeholder="Share your thoughts with Sierra Leone..."></textarea>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" onclick="closeCreateModal()">Cancel</button>
+      <button class="btn btn-green" onclick="createPostFromModal()">Publish</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<!-- ══════════════════════════════════════
+     JAVASCRIPT — ALL FUNCTIONALITY
+══════════════════════════════════════ -->
+<script>
+  /* ══ AUTH GUARD ═══════════════════════════════════════ */
+  const token    = localStorage.getItem('token');
+  const username = localStorage.getItem('username') || '';
+
+  // If not logged in redirect to login page
+  if (!token) { window.location.href = '/login'; }
+
+  /* ══ SET USER INFO IN UI ══════════════════════════════ */
+  const initials = username[0]?.toUpperCase() || 'U';
+  document.getElementById('nav-uname').textContent   = username;
+  document.getElementById('nav-ava').textContent     = initials;
+  document.getElementById('compose-ava').textContent = initials;
+  document.getElementById('p-big-ava').textContent   = initials;
+  document.getElementById('p-name').textContent      = username;
+  document.getElementById('p-handle').textContent    = '@' + username;
+
+  /* ══ STATE ════════════════════════════════════════════ */
+  let allPosts    = [];
+  let likedIds    = new Set();
+  let editingId   = null;
+
+  /* ══ HELPERS ══════════════════════════════════════════ */
+  const authHdr = () => ({
+    'Authorization': 'Bearer ' + token,
+    'Content-Type':  'application/json'
+  });
+
+  function esc(s) {
+    return String(s ?? '')
+      .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+      .replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/`/g,'&#96;');
+  }
+
+  function fmtDate(iso) {
+    if (!iso) return '';
+    return new Date(iso).toLocaleDateString('en-GB', {
+      day:'numeric', month:'short', year:'numeric',
+      hour:'2-digit', minute:'2-digit'
+    });
+  }
+
+  function toast(msg, err=false) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.className   = 'toast' + (err?' err':'');
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 3000);
+  }
+
+  function skels(n=3) {
+    return Array(n).fill(`
+      <div class="skel">
+        <div class="skel-line" style="height:13px;width:38%;margin-bottom:10px"></div>
+        <div class="skel-line" style="height:18px;width:65%"></div>
+        <div class="skel-line" style="height:13px;width:88%"></div>
+        <div class="skel-line" style="height:13px;width:72%"></div>
+      </div>`).join('');
+  }
+
+  function emptyState(icon, msg) {
+    return `<div class="empty"><div class="empty-icon">${icon}</div><p>${msg}</p></div>`;
+  }
+
+  /* ══ VIEW SWITCHING ═══════════════════════════════════ */
+  const VIEWS = ['feed','profile','myposts','liked'];
+
+  function switchView(name) {
+    VIEWS.forEach(v => {
+      document.getElementById('view-' + v).classList.remove('active');
+      const sb = document.getElementById('sb-' + v);
+      if (sb) sb.classList.remove('active');
+    });
+    document.getElementById('view-' + name).classList.add('active');
+    const sb = document.getElementById('sb-' + name);
+    if (sb) sb.classList.add('active');
+
+    if (name === 'feed')    loadFeed();
+    if (name === 'profile') loadProfile();
+    if (name === 'myposts') loadMyPosts();
+    if (name === 'liked')   loadLiked();
+  }
+
+  /* ══ SEARCH ═══════════════════════════════════════════ */
+  function handleSearch() {
+    const q = document.getElementById('search-input').value.toLowerCase();
+    const filtered = q
+      ? allPosts.filter(p =>
+          p.title.toLowerCase().includes(q) ||
+          p.content.toLowerCase().includes(q) ||
+          (p.owner_username||'').toLowerCase().includes(q))
+      : allPosts;
+    renderList(filtered, 'feed-list');
+  }
+
+  /* ══ FEED ══════════════════════════════════════════════ */
+  async function loadFeed() {
+    document.getElementById('feed-list').innerHTML = skels();
+    try {
+      const res  = await fetch('/posts/');
+      if (res.status === 401) { logout(); return; }
+      allPosts = await res.json();
+      renderList(allPosts, 'feed-list');
+      updateRightPanel(allPosts);
+      renderTrending(allPosts);
+    } catch {
+      document.getElementById('feed-list').innerHTML =
+        emptyState('⚠️', 'Could not load posts.<br/>Make sure the server is running.');
+    }
+  }
+
+  function renderList(posts, containerId) {
+    const c = document.getElementById(containerId);
+    if (!posts || !posts.length) {
+      c.innerHTML = emptyState('📭', 'No posts here yet.<br/>Be the first to share something!');
+      return;
+    }
+    c.innerHTML = posts.map(postCard).join('');
+  }
+
+  /* ══ POST CARD ═════════════════════════════════════════ */
+  function postCard(p) {
+    const isOwner  = p.owner_username === username;
+    const initial  = (p.owner_username || 'U')[0].toUpperCase();
+    const youBadge = isOwner ? '<span class="you-badge">You</span>' : '';
+
+    const ownerBtns = isOwner ? `
+      <div class="owner-btns">
+        <button class="btn btn-blue btn-xs"
+          onclick="openEdit(${p.id}, \`${esc(p.title)}\`, \`${esc(p.content)}\`)">
+          ✏️ Edit
+        </button>
+        <button class="btn btn-red btn-xs" onclick="deletePost(${p.id})">
+          🗑️ Delete
+        </button>
+      </div>` : '';
+
+    const isLiked = likedIds.has(p.id);
+
+    return `
+    <div class="post-card" id="post-${p.id}">
+      <div class="post-hdr">
+        <div class="post-ava">${initial}</div>
+        <div class="post-meta-wrap">
+          <div>
+            <span class="post-author">${esc(p.owner_username || 'Unknown')}</span>
+            <span class="post-handle">@${esc(p.owner_username || 'user')}</span>
+            ${youBadge}
+          </div>
+          <div class="post-date">${fmtDate(p.created_at)}</div>
+        </div>
+      </div>
+
+      <div class="post-title">${esc(p.title)}</div>
+      <div class="post-body">${esc(p.content)}</div>
+
+      <div class="action-bar">
+        <button class="act-btn like-btn ${isLiked?'liked':''}"
+          id="like-${p.id}" onclick="toggleLike(${p.id})">
+          ❤️ <span id="lc-${p.id}">${p.like_count ?? 0}</span>
+        </button>
+
+        <button class="act-btn cmt-btn"
+          id="cmt-toggle-${p.id}" onclick="toggleCmts(${p.id})">
+          💬 <span id="cc-${p.id}">${p.comment_count ?? 0}</span>
+        </button>
+
+        ${ownerBtns}
+      </div>
+
+      <div class="cmt-drawer" id="drawer-${p.id}">
+        <div id="cmt-list-${p.id}"></div>
+        <div class="cmt-input-row">
+          <input type="text" id="cmt-in-${p.id}"
+            placeholder="Write a comment..."
+            onkeydown="if(event.key==='Enter') addComment(${p.id})"/>
+          <button class="btn btn-blue btn-sm" onclick="addComment(${p.id})">Send</button>
+        </div>
+      </div>
+    </div>`;
+  }
+
+  /* ══ CREATE POST ═══════════════════════════════════════ */
+  async function createPost() {
+    const title   = document.getElementById('c-title').value.trim();
+    const content = document.getElementById('c-content').value.trim();
+    if (!title || !content) { toast('Title and content are required.', true); return; }
+    const ok = await submitNewPost(title, content);
+    if (ok) {
+      document.getElementById('c-title').value   = '';
+      document.getElementById('c-content').value = '';
+    }
+  }
+
+  async function createPostFromModal() {
+    const title   = document.getElementById('m-title').value.trim();
+    const content = document.getElementById('m-content').value.trim();
+    if (!title || !content) { toast('Title and content are required.', true); return; }
+    const ok = await submitNewPost(title, content);
+    if (ok) {
+      closeCreateModal();
+      document.getElementById('m-title').value   = '';
+      document.getElementById('m-content').value = '';
+    }
+  }
+
+  async function submitNewPost(title, content) {
+    try {
+      const res = await fetch('/posts/', {
+        method: 'POST', headers: authHdr(),
+        body: JSON.stringify({ title, content })
+      });
+      if (res.status === 401) { logout(); return false; }
+      if (!res.ok) { toast('Failed to create post.', true); return false; }
+      toast('Post published! 🎉');
+      loadFeed();
+      return true;
+    } catch {
+      toast('Server error. Try again.', true);
+      return false;
+    }
+  }
+
+  /* ══ DELETE POST ═══════════════════════════════════════ */
+  async function deletePost(id) {
+    if (!confirm('Delete this post? This cannot be undone.')) return;
+    try {
+      const res = await fetch('/posts/' + id, { method: 'DELETE', headers: authHdr() });
+      if (res.status === 401) { logout(); return; }
+      if (res.status === 403) { toast('You can only delete your own posts.', true); return; }
+      toast('Post deleted.');
+      document.getElementById('post-' + id)?.remove();
+      allPosts = allPosts.filter(p => p.id !== id);
+      updateRightPanel(allPosts);
+    } catch {
+      toast('Delete failed.', true);
+    }
+  }
+
+  /* ══ EDIT POST ═════════════════════════════════════════ */
+  function openEdit(id, title, content) {
+    editingId = id;
+    document.getElementById('edit-title').value   = title;
+    document.getElementById('edit-content').value = content;
+    document.getElementById('edit-overlay').classList.add('open');
+  }
+
+  function closeEdit() {
+    editingId = null;
+    document.getElementById('edit-overlay').classList.remove('open');
+  }
+
+  async function submitEdit() {
+    const title   = document.getElementById('edit-title').value.trim();
+    const content = document.getElementById('edit-content').value.trim();
+    if (!title || !content) { toast('Both fields are required.', true); return; }
+    try {
+      const res = await fetch('/posts/' + editingId, {
+        method: 'PUT', headers: authHdr(),
+        body: JSON.stringify({ title, content })
+      });
+      if (!res.ok) { toast('Update failed.', true); return; }
+      closeEdit();
+      toast('Post updated! ✅');
+      loadFeed();
+    } catch {
+      toast('Server error.', true);
+    }
+  }
+
+  /* ══ LIKES ═════════════════════════════════════════════ */
+  async function toggleLike(postId) {
+    try {
+      const res  = await fetch('/posts/' + postId + '/like', {
+        method: 'POST', headers: authHdr()
+      });
+      if (res.status === 401) { logout(); return; }
+      if (!res.ok) { toast('Like failed.', true); return; }
+      const data = await res.json();
+
+      // Update like count
+      const lc = document.getElementById('lc-' + postId);
+      if (lc) lc.textContent = data.like_count;
+
+      // Toggle liked style
+      const btn = document.getElementById('like-' + postId);
+      if (btn) btn.classList.toggle('liked', data.liked);
+
+      // Update local cache
+      data.liked ? likedIds.add(postId) : likedIds.delete(postId);
+
+      // Update allPosts cache
+      const p = allPosts.find(x => x.id === postId);
+      if (p) p.like_count = data.like_count;
+
+      updateRightPanel(allPosts);
+    } catch {
+      toast('Could not update like.', true);
+    }
+  }
+
+  /* ══ COMMENTS ══════════════════════════════════════════ */
+  function toggleCmts(postId) {
+    const drawer = document.getElementById('drawer-' + postId);
+    const btn    = document.getElementById('cmt-toggle-' + postId);
+    const isOpen = drawer.classList.toggle('open');
+    btn.classList.toggle('open', isOpen);
+    if (isOpen) loadComments(postId);
+  }
+
+  async function loadComments(postId) {
+    const list = document.getElementById('cmt-list-' + postId);
+    list.innerHTML = '<p style="font-size:12px;color:var(--muted);padding:4px 0">Loading...</p>';
+    try {
+      const res  = await fetch('/posts/' + postId + '/comments');
+      const data = await res.json();
+      if (!data.length) {
+        list.innerHTML = '<p style="font-size:13px;color:var(--muted);margin-bottom:10px">No comments yet. Start the conversation!</p>';
+        return;
+      }
+      list.innerHTML = data.map(c => `
+        <div class="cmt-row">
+          <div class="cmt-ava">${(c.owner_username||'U')[0].toUpperCase()}</div>
+          <div class="cmt-body">
+            <div class="cmt-bubble">
+              <div class="cmt-user">@${esc(c.owner_username||'user')}</div>
+              <div class="cmt-text">${esc(c.content)}</div>
+            </div>
+            <div class="cmt-time">${fmtDate(c.created_at)}</div>
+          </div>
+        </div>`).join('');
+    } catch {
+      list.innerHTML = '<p style="font-size:13px;color:var(--red)">Could not load comments.</p>';
+    }
+  }
+
+  async function addComment(postId) {
+    const input   = document.getElementById('cmt-in-' + postId);
+    const content = input.value.trim();
+    if (!content) return;
+    try {
+      const res = await fetch('/posts/' + postId + '/comments', {
+        method: 'POST', headers: authHdr(),
+        body: JSON.stringify({ content })
+      });
+      if (res.status === 401) { logout(); return; }
+      if (!res.ok) { toast('Comment failed.', true); return; }
+      input.value = '';
+      loadComments(postId);
+      const cc = document.getElementById('cc-' + postId);
+      if (cc) cc.textContent = parseInt(cc.textContent||'0') + 1;
+    } catch {
+      toast('Could not post comment.', true);
+    }
+  }
+
+  /* ══ PROFILE ═══════════════════════════════════════════ */
+  async function loadProfile() {
+    document.getElementById('profile-list').innerHTML = skels(2);
+    try {
+      const res   = await fetch('/posts/');
+      const posts = await res.json();
+      const mine  = posts.filter(p => p.owner_username === username);
+      document.getElementById('p-stat-posts').textContent = mine.length;
+      document.getElementById('p-stat-likes').textContent = mine.reduce((a,p) => a+(p.like_count||0), 0);
+      document.getElementById('p-stat-cmts').textContent  = mine.reduce((a,p) => a+(p.comment_count||0), 0);
+      if (!mine.length) {
+        document.getElementById('profile-list').innerHTML =
+          emptyState('✍️', "You haven't posted anything yet.<br/>Go to the feed and create your first post!");
+        return;
+      }
+      document.getElementById('profile-list').innerHTML = mine.map(postCard).join('');
+    } catch {
+      document.getElementById('profile-list').innerHTML =
+        emptyState('⚠️', 'Could not load your posts.');
+    }
+  }
+
+  /* ══ MY POSTS ══════════════════════════════════════════ */
+  async function loadMyPosts() {
+    document.getElementById('myposts-list').innerHTML = skels(2);
+    try {
+      const res   = await fetch('/posts/');
+      const posts = await res.json();
+      const mine  = posts.filter(p => p.owner_username === username);
+      renderList(mine, 'myposts-list');
+    } catch {
+      document.getElementById('myposts-list').innerHTML = emptyState('⚠️','Could not load posts.');
+    }
+  }
+
+  /* ══ LIKED POSTS ═══════════════════════════════════════ */
+  async function loadLiked() {
+    document.getElementById('liked-list').innerHTML = skels(2);
+    try {
+      const res   = await fetch('/posts/');
+      const posts = await res.json();
+      const liked = posts.filter(p => likedIds.has(p.id));
+      if (!liked.length) {
+        document.getElementById('liked-list').innerHTML =
+          emptyState('❤️', "You haven't liked any posts yet.<br/>Browse the feed and show some love!");
+        return;
+      }
+      renderList(liked, 'liked-list');
+    } catch {
+      document.getElementById('liked-list').innerHTML = emptyState('⚠️','Could not load posts.');
+    }
+  }
+
+  /* ══ RIGHT PANEL ═══════════════════════════════════════ */
+  function updateRightPanel(posts) {
+    const mine = posts.filter(p => p.owner_username === username);
+    document.getElementById('rp-posts').textContent = mine.length;
+    document.getElementById('rp-likes').textContent = mine.reduce((a,p)=>a+(p.like_count||0),0);
+    document.getElementById('rp-cmts').textContent  = mine.reduce((a,p)=>a+(p.comment_count||0),0);
+    document.getElementById('rp-total').textContent = posts.length;
+  }
+
+  function renderTrending(posts) {
+    const top = [...posts].sort((a,b)=>(b.like_count||0)-(a.like_count||0)).slice(0,5);
+    const el  = document.getElementById('trending-list');
+    if (!top.length) { el.innerHTML = '<p style="font-size:13px;color:var(--muted)">No posts yet.</p>'; return; }
+    el.innerHTML = top.map((p,i) => `
+      <div class="trend-item" onclick="scrollToPost(${p.id})">
+        <span class="trend-num">${i+1}</span>
+        <span class="trend-txt">${esc(p.title.slice(0,30))}${p.title.length>30?'…':''}</span>
+        <span class="trend-cnt">❤️ ${p.like_count||0}</span>
+      </div>`).join('');
+  }
+
+  function scrollToPost(id) {
+    switchView('feed');
+    setTimeout(() => {
+      document.getElementById('post-' + id)?.scrollIntoView({ behavior:'smooth', block:'center' });
+    }, 280);
+  }
+
+  /* ══ MODALS ════════════════════════════════════════════ */
+  function openCreateModal()  { document.getElementById('create-overlay').classList.add('open'); }
+  function closeCreateModal() { document.getElementById('create-overlay').classList.remove('open'); }
+
+  // Close on backdrop click
+  document.getElementById('edit-overlay').addEventListener('click', e => {
+    if (e.target === e.currentTarget) closeEdit();
+  });
+  document.getElementById('create-overlay').addEventListener('click', e => {
+    if (e.target === e.currentTarget) closeCreateModal();
+  });
+
+  // Close modals on Escape key
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') { closeEdit(); closeCreateModal(); }
+  });
+
+  /* ══ LOGOUT ════════════════════════════════════════════ */
+  function logout() {
+    localStorage.removeItem('token');
+    localStorage.removeItem('username');
+    window.location.href = '/login';
+  }
+
+  /* ══ INIT ══════════════════════════════════════════════ */
+  loadFeed();
+</script>
+</body>
+</html>

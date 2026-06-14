@@ -1,305 +1,367 @@
-# Social Media Post API
-
-A FastAPI-based Social Media API built for Object-Oriented Programming 2, aligned with **SDG 16: Peace, Justice and Strong Institutions**.
-
-This platform enables Sierra Leone youth to express themselves responsibly and engage in constructive digital dialogue through a secure, community-driven API.
-
-## Team Implementation
-
-| Member | Responsibility | Status |
-|--------|-----------------|--------|
-| **Member 1** | PostgreSQL Database + Post CRUD Operations | ✅ Complete |
-| **Member 2** | JWT Authentication + User Management | ✅ Complete |
-| **Member 3** | Comments + Likes Features + Documentation | ✅ Complete |
-
+# UniHub
+ 
+## Your Academic Hub, All In One Place
+ 
+UniHub (formerly UniLink) is a web-based academic collaboration platform for
+university and college students. It evolved from the original **Social Media
+Post API** (built for OOP2, aligned with SDG 16) into a focused academic
+workspace — combining community discussion, resource sharing, assignment
+tracking, and project group collaboration into a single platform.
+ 
+Unlike entertainment-focused social media, UniHub is built around solving the
+recurring problems students face every semester: scattered lecture notes,
+missed assignment deadlines, fragmented group project communication, and
+disconnected class updates.
+ 
+## What UniHub Solves
+ 
+| Problem | UniHub's Answer |
+|---|---|
+| Lecture notes, slides, and past papers scattered across WhatsApp | **Resources** — a searchable file library per community |
+| Forgotten or late assignment updates | **Assignments** — due dates tracked per community, surfaced on the dashboard |
+| Group project coordination spread across apps | **Project Groups** — private spaces with their own discussions |
+| Nowhere to ask academic questions | **Communities** — discussion posts, comments, and likes per subject/course |
+| Missed class announcements | **Announcements** — pinned, notification-backed updates from class reps and admins |
+ 
+## Core Concepts
+ 
+UniHub revolves around **Communities** — one per course, subject, or interest
+(e.g. Software Engineering, Database Systems, Networking, Final Year Project).
+Each community is a mini academic space with its own members, discussions,
+resources, and assignments. **Project Groups** work the same way but are
+oriented around a specific deliverable (e.g. a group project team) rather than
+a whole course.
+ 
 ## Key Features
-
-- **Secure Authentication**: JWT tokens with Argon2 password hashing
-- **CRUD Operations**: Full create, read, update, delete for posts
-- **Community Interaction**: Comment on posts and like/unlike functionality
-- **Authorization**: Protected endpoints with ownership validation
-- **Interactive Documentation**: Swagger UI and ReDoc at `/docs` and `/redoc`
-- **CORS Enabled**: Cross-origin requests supported
-
+ 
+### Identity & Profiles
+- JWT authentication with Argon2 password hashing and rate-limited login
+- Academic profile fields: full name, bio, avatar, department, academic year
+- Follow other students, personalized feed, full-text search across posts, users, and communities
+### Communities
+- Create, browse, join, and leave communities
+- Member lists and roles (`member` / `admin`)
+- Posts, resources, and assignments are scoped to a community
+### Discussions (Posts)
+- Create posts inside a community, inside a project group, or on your own profile
+- Like / unlike with per-viewer `is_liked` state
+- Comment, edit, and delete comments — full ownership checks throughout
+### Resources
+- Upload lecture notes, slides, past papers, and documents (PDF, DOCX, PPT, XLSX, images)
+- 20MB file size limit, served back via direct download links
+- Browse and filter by community
+### Assignments
+- Title, description, and due date, scoped to a community
+- "Upcoming" filter for dashboard widgets
+- Posting an assignment notifies every community member
+### Project Groups
+- Create or join private collaboration spaces
+- Member lists with roles
+- Posts scoped to the group act as the group's discussion thread
+### Announcements
+- Community-scoped (posted by community admins) or platform-wide (posted by platform admins)
+- Pinned announcements surface first
+- Automatically notifies all relevant members
+### Notifications
+- Triggered by: likes, comments, new followers, new assignments, new announcements
+- Unread count endpoint, mark-as-read (single or all)
+### Dashboard
+- Single aggregate endpoint returning: greeting info, your communities, upcoming
+  assignments, recent resources, recent discussions, announcements, and unread
+  notification count — everything the home screen needs in one request
+### Account & Data Integrity
+- Delete your account at any time — cascades through your posts, comments,
+  likes, and follows
+- PostgreSQL triggers archive deleted users, posts, and comments into
+  admin-only tables before removal, preserving an audit trail
+- Admin-only endpoints to review archived data
+## Tech Stack
+ 
+| Layer | Technology |
+|---|---|
+| API | FastAPI |
+| Database | PostgreSQL + SQLAlchemy ORM |
+| Auth | JWT (python-jose) + Argon2 (passlib) |
+| Rate Limiting | slowapi |
+| File Storage | Local disk (`uploads/`), served via FastAPI static mount |
+| Frontend | HTML, CSS, vanilla JavaScript (no build step) |
+ 
 ## Prerequisites
-
-- **Python 3.8+** (tested with Python 3.14)
-- **PostgreSQL 12+** (installed and running on localhost:5432)
-- **pip** (Python package manager)
-
+ 
+- **Python 3.8+**
+- **PostgreSQL 12+** running on `localhost:5432`
+- **pip**
 ## Quick Start
-
+ 
 ### 1. Database Setup
-Ensure PostgreSQL is running and create the database:
 ```bash
 psql -U postgres
 CREATE DATABASE social_media_db;
 \q
 ```
-
+ 
 ### 2. Environment Configuration
 ```bash
 cp .env.example .env
 ```
-
-Edit `.env` with your PostgreSQL credentials:
 ```env
 DATABASE_URL=postgresql://postgres:your_password@localhost:5432/social_media_db
 SECRET_KEY=your-secret-key-min-32-chars-recommended
 ALGORITHM=HS256
 ACCESS_TOKEN_EXPIRE_MINUTES=30
 ```
-
+ 
 ### 3. Install Dependencies
 ```bash
 pip install -r requirements.txt
 ```
-
+ 
 ### 4. Run the Server
 ```bash
-uvicorn main:app --reload --port 8002
+python main.py
 ```
-
-The API will be available at `http://localhost:8002`
-
-### 5. Access Documentation
-- **Swagger UI**: http://localhost:8002/docs
-- **ReDoc**: http://localhost:8002/redoc
-
-## API Endpoints
-
-### Authentication (No Auth Required)
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| POST | `/auth/register` | Register a new user (username, email, password) |
-| POST | `/auth/login` | Login with username & password, returns JWT token |
-
-### Posts (Protected Endpoints - Require JWT Token)
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| POST | `/posts/` | Create a new post (auth required) |
-| GET | `/posts/` | Retrieve all posts (public) |
-| GET | `/posts/{post_id}` | Get a specific post by ID (public) |
-| PUT | `/posts/{post_id}` | Update a post (owner only, auth required) |
-| DELETE | `/posts/{post_id}` | Delete a post (owner only, auth required) |
-
-### Comments (Protected Endpoints - Require JWT Token)
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| POST | `/comments/?post_id={id}` | Add comment to post (auth required) |
-| GET | `/comments/post/{post_id}` | Get all comments for a post (public) |
-
-### Likes (Protected Endpoints - Require JWT Token)
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| POST | `/likes/{post_id}` | Like a post (prevents duplicate likes) |
-| DELETE | `/likes/{post_id}` | Remove like from post |
-
+The API will be available at `http://localhost:8001`. On first run, all tables —
+including communities, resources, assignments, project groups, announcements,
+and notifications — are created automatically.
+ 
+### 5. Apply Database Triggers (one-time)
+```bash
+psql -U <your_db_user> -d social_media_db -f migrations/001_add_triggers.sql
+```
+Archives deleted users/posts/comments into `deleted_users`, `deleted_posts`,
+and `deleted_comments` for admin review.
+ 
+### 6. Seed Starter Communities
+ 
+UniHub ships empty — create a few communities so the platform isn't a blank
+slate on first login:
+```bash
+curl -X POST "http://localhost:8001/communities/" \
+  -H "Authorization: Bearer YOUR_TOKEN_HERE" \
+  -H "Content-Type: application/json" \
+  -d '{"name": "Software Engineering", "icon": "💻", "description": "All things SE"}'
+```
+Repeat for Database Systems, Networking, Artificial Intelligence, etc.
+ 
+### 7. Run the Frontend
+```bash
+cd unihub
+python -m http.server 5500
+```
+Open `http://127.0.0.1:5500/index.html`. The backend must be running on
+`http://localhost:8001`.
+ 
+### 8. API Documentation
+- **Swagger UI**: http://localhost:8001/docs
+- **ReDoc**: http://localhost:8001/redoc
+## API Reference
+ 
+### Authentication
+| Method | Endpoint | Auth | Description |
+|---|---|---|---|
+| POST | `/auth/register` | No | Register with username, email, password, and optional full name / department / academic year |
+| POST | `/auth/login` | No | Form-encoded login, returns JWT. Rate-limited to 5/min per IP |
+ 
+### Users
+| Method | Endpoint | Auth | Description |
+|---|---|---|---|
+| GET | `/users/me` | Yes | Your full profile |
+| PUT | `/users/me` | Yes | Update username, email, full name, bio, avatar, department, academic year |
+| DELETE | `/users/me` | Yes | Permanently delete your account and all your content |
+| GET | `/users/{id}` | No | Public profile with follower/following counts |
+| GET | `/users/{id}/posts` | Optional | A user's posts, paginated |
+| POST / DELETE | `/users/{id}/follow` | Yes | Follow / unfollow |
+| GET | `/users/{id}/followers` | No | Followers list |
+| GET | `/users/{id}/following` | No | Following list |
+ 
+### Posts (Discussions)
+| Method | Endpoint | Auth | Description |
+|---|---|---|---|
+| POST | `/posts/` | Yes | Create a post. Optional `community_id` or `project_group_id` (must be a member) |
+| GET | `/posts/?skip&limit&community_id&project_group_id` | Optional | Paginated, newest first, filterable by community/group |
+| GET | `/posts/{id}` | Optional | Single post with `like_count`, `comment_count`, `is_liked` |
+| PUT / DELETE | `/posts/{id}` | Yes (owner) | Edit / delete |
+ 
+### Comments & Likes
+| Method | Endpoint | Auth | Description |
+|---|---|---|---|
+| POST | `/comments/?post_id={id}` | Yes | Add a comment (notifies post owner) |
+| GET | `/comments/post/{id}` | No | All comments on a post |
+| PUT / DELETE | `/comments/{id}` | Yes (owner) | Edit / delete |
+| POST / DELETE | `/likes/{post_id}` | Yes | Like / unlike (notifies post owner) |
+ 
+### Feed & Search
+| Method | Endpoint | Auth | Description |
+|---|---|---|---|
+| GET | `/feed/?skip&limit` | Yes | Posts from people you follow |
+| GET | `/search/posts?q=` | Optional | Search posts |
+| GET | `/search/users?q=` | No | Search users |
+| GET | `/search/communities?q=` | Optional | Search communities |
+ 
+### Communities
+| Method | Endpoint | Auth | Description |
+|---|---|---|---|
+| POST | `/communities/` | Yes | Create (creator becomes admin) |
+| GET | `/communities/?skip&limit` | Optional | List all, with `is_member` if logged in |
+| GET | `/communities/mine` | Yes | Communities you've joined |
+| GET | `/communities/{id}` | Optional | Detail |
+| POST / DELETE | `/communities/{id}/join` / `/leave` | Yes | Join / leave (sole admin can't leave) |
+| GET | `/communities/{id}/members` | No | Member list with roles |
+ 
+### Resources
+| Method | Endpoint | Auth | Description |
+|---|---|---|---|
+| POST | `/resources/` | Yes | Upload (`multipart/form-data`: `title`, `description?`, `community_id?`, `file`) |
+| GET | `/resources/?community_id&skip&limit` | No | List |
+| GET | `/resources/{id}` | No | Metadata |
+| GET | `/resources/{id}/download` | No | Download the file |
+| DELETE | `/resources/{id}` | Yes (owner/admin) | Delete |
+ 
+### Assignments
+| Method | Endpoint | Auth | Description |
+|---|---|---|---|
+| POST | `/assignments/` | Yes (community member) | Create (notifies all community members) |
+| GET | `/assignments/?community_id&upcoming&skip&limit` | No | List, filterable to upcoming only |
+| GET | `/assignments/{id}` | No | Detail |
+| PUT / DELETE | `/assignments/{id}` | Yes (creator) | Edit / delete |
+ 
+### Project Groups
+| Method | Endpoint | Auth | Description |
+|---|---|---|---|
+| POST | `/project-groups/` | Yes | Create (creator becomes admin) |
+| GET | `/project-groups/?skip&limit` | Optional | List all |
+| GET | `/project-groups/mine` | Yes | Groups you've joined |
+| GET | `/project-groups/{id}` | Optional | Detail |
+| POST / DELETE | `/project-groups/{id}/join` / `/leave` | Yes | Join / leave |
+| GET | `/project-groups/{id}/members` | No | Member list |
+ 
+### Announcements
+| Method | Endpoint | Auth | Description |
+|---|---|---|---|
+| POST | `/announcements/` | Yes | Community admin (scoped) or platform admin (platform-wide, `community_id` omitted) |
+| GET | `/announcements/?community_id&skip&limit` | No | List, pinned first. Omit `community_id` for platform-wide |
+| DELETE | `/announcements/{id}` | Yes (creator/admin) | Delete |
+ 
+### Notifications
+| Method | Endpoint | Auth | Description |
+|---|---|---|---|
+| GET | `/notifications/?skip&limit` | Yes | Your notifications, newest first |
+| GET | `/notifications/unread-count` | Yes | Unread count |
+| PUT | `/notifications/{id}/read` | Yes | Mark one as read |
+| PUT | `/notifications/read-all` | Yes | Mark all as read |
+ 
+### Dashboard & Admin
+| Method | Endpoint | Auth | Description |
+|---|---|---|---|
+| GET | `/dashboard/` | Yes | Aggregate home-screen payload |
+| GET | `/admin/deleted-users` `/deleted-posts` `/deleted-comments` | Yes (admin) | Review archived data |
+| GET | `/health` | No | Health check |
+ 
+## Roles & Permissions
+ 
+UniHub has two independent levels of "admin":
+ 
+- **Platform admin** (`users.is_admin = true`) — can post platform-wide
+  announcements and view the deleted-data archive. Granted manually via SQL:
+```sql
+  UPDATE users SET is_admin = TRUE WHERE username = '<username>';
+```
+- **Community admin** (`community_members.role = 'admin'`) — automatically
+  granted to whoever creates a community. Can post announcements and
+  assignments scoped to that community. A community must always retain at
+  least one admin.
 ## Project Structure
-
+ 
 ```
-BSEM-1204-GROUP10/
-├── app/                    # FastAPI application package
-│   ├── __init__.py
-│   ├── main.py             # FastAPI app initialization and router setup
-│   ├── auth.py             # JWT authentication and password hashing
-│   ├── database.py         # Database connection and session management
-│   ├── models/             # SQLAlchemy database models
-│   │   ├── __init__.py
-│   │   ├── user.py         # User model
-│   │   ├── post.py         # Post model
-│   │   ├── comment.py      # Comment model
-│   │   └── like.py         # Like model
-│   ├── schemas/            # Pydantic schemas for request/response validation
-│   │   ├── __init__.py
-│   │   ├── user.py         # User Pydantic schemas
-│   │   ├── post.py         # Post Pydantic schemas
-│   │   ├── comment.py      # Comment Pydantic schemas
-│   │   └── like.py         # Like Pydantic schemas
-│   └── routers/            # API route handlers
-│       ├── __init__.py
-│       ├── auth.py         # Authentication endpoints (/auth)
-│       ├── posts.py        # Post endpoints (/posts)
-│       ├── comments.py     # Comment endpoints (/comments)
-│       └── likes.py        # Like endpoints (/likes)
-├── main.py                 # Application entry point (imports from app.main)
-├── requirements.txt        # Python dependencies
-├── .env                    # Environment variables (not in version control)
-├── .env.example            # Environment variables template
-├── schema.sql              # Database schema SQL
-├── README.md               # This file
-├── AUTHENTICATION_GUIDE.md # JWT authentication guide
-├── POSTGRESQL_SETUP.md     # PostgreSQL setup instructions
-└── PROJECTBRIEF.md         # Project brief and requirements
+UniHub/
+├── app/
+│   ├── main.py
+│   ├── auth.py
+│   ├── database.py
+│   ├── notifications_util.py
+│   ├── models/
+│   │   ├── user.py            # + full_name, department, academic_year, is_admin
+│   │   ├── post.py             # + community_id, project_group_id
+│   │   ├── comment.py
+│   │   ├── like.py
+│   │   ├── follow.py
+│   │   ├── archive.py          # deleted_* archive tables
+│   │   ├── community.py        # Community, CommunityMember
+│   │   ├── resource.py
+│   │   ├── assignment.py
+│   │   ├── project_group.py    # ProjectGroup, ProjectGroupMember
+│   │   ├── announcement.py
+│   │   └── notification.py
+│   ├── schemas/
+│   │   ├── user.py / post.py / comment.py / like.py
+│   │   ├── community.py / resource.py / assignment.py
+│   │   ├── project_group.py / announcement.py / notification.py
+│   │   └── dashboard.py
+│   └── routers/
+│       ├── auth.py / posts.py / comments.py / likes.py
+│       ├── users.py / feed.py / search.py / admin.py
+│       └── communities.py / resources.py / assignments.py
+│           project_groups.py / announcements.py / notifications.py / dashboard.py
+├── unihub/                     # frontend (formerly unilink/)
+│   ├── index.html
+│   ├── dashboard.html
+│   ├── communities.html
+│   ├── community-detail.html
+│   ├── js/
+│   │   ├── api.js
+│   │   ├── app.js
+│   │   └── nav.js
+│   └── styles.css
+├── uploads/
+│   └── resources/              # uploaded files, served at /uploads/resources/*
+├── migrations/
+│   └── 001_add_triggers.sql
+├── main.py
+├── requirements.txt
+├── .env / .env.example
+└── README.md
 ```
-
-## Database Schema
-
-### Users Table
-| Column | Type | Constraints |
-|--------|------|-------------|
-| `id` | INTEGER | PRIMARY KEY, auto-increment |
-| `username` | STRING | UNIQUE, NOT NULL |
-| `email` | STRING | UNIQUE, NOT NULL |
-| `hashed_password` | STRING | NOT NULL (Argon2-hashed) |
-
-### Posts Table
-| Column | Type | Constraints |
-|--------|------|-------------|
-| `id` | INTEGER | PRIMARY KEY, auto-increment |
-| `title` | STRING | NOT NULL |
-| `content` | TEXT | NOT NULL |
-| `user_id` | INTEGER | FOREIGN KEY → users.id |
-| `created_at` | DATETIME | NOT NULL, auto-set |
-| `updated_at` | DATETIME | NOT NULL, auto-update |
-
-### Comments Table
-| Column | Type | Constraints |
-|--------|------|-------------|
-| `id` | INTEGER | PRIMARY KEY, auto-increment |
-| `content` | TEXT | NOT NULL |
-| `post_id` | INTEGER | FOREIGN KEY → posts.id |
-| `user_id` | INTEGER | FOREIGN KEY → users.id |
-| `created_at` | DATETIME | NOT NULL, auto-set |
-
-### Likes Table
-| Column | Type | Constraints |
-|--------|------|-------------|
-| `id` | INTEGER | PRIMARY KEY, auto-increment |
-| `post_id` | INTEGER | FOREIGN KEY → posts.id |
-| `user_id` | INTEGER | FOREIGN KEY → users.id |
-| `created_at` | DATETIME | NOT NULL, auto-set |
-| | | UNIQUE(post_id, user_id) - Prevents duplicate likes |
-
-## Authentication
-
-### How JWT Works in This API
-
-1. **Register** → Receive username confirmation
-2. **Login** → Send `username` & `password` (form-encoded) → Receive `access_token`
-3. **Access Protected Routes** → Include token in Authorization header: `Bearer <token>`
-4. **Token Expiration** → 30 minutes (set in ACCESS_TOKEN_EXPIRE_MINUTES)
-
-### Security Implementation
-
-- **Password Hashing**: Argon2 (via passlib) - resistant to GPU/ASIC attacks
-- **Token Encoding**: HS256 with SECRET_KEY
-- **CORS**: Enabled for all origins (`*`)
-- **Ownership Validation**: Only post owners can update/delete their own posts
-
-## Testing
-
-### Using Swagger UI (Recommended)
-Navigate to: **http://localhost:8002/docs**
-
-1. Click **"Authorize"** button
-2. Enter username and password
-3. Click **"Authorize"** to get a token
-4. Try out endpoints directly in the interface
-
-### Using cURL
-
-**1. Register a user**
-```bash
-curl -X POST "http://localhost:8002/auth/register" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "username": "khalil",
-    "email": "khalil@example.com",
-    "password": "mypassword123"
-  }'
-```
-
-**2. Login (OAuth2 form-encoded)**
-```bash
-curl -X POST "http://localhost:8002/auth/login" \
-  -H "Content-Type: application/x-www-form-urlencoded" \
-  -d "username=khalil&password=mypassword123"
-```
-
-Response:
-```json
-{
-  "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-  "token_type": "bearer"
-}
-```
-
-**3. Create a post (with JWT token)**
-```bash
-curl -X POST "http://localhost:8002/posts/" \
-  -H "Authorization: Bearer YOUR_TOKEN_HERE" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "title": "SDG 16 in Action",
-    "content": "Building peaceful digital spaces for youth"
-  }'
-```
-
-**4. Get all posts**
-```bash
-curl -X GET "http://localhost:8002/posts/"
-```
-
-**5. Create a comment**
-```bash
-curl -X POST "http://localhost:8002/comments/?post_id=1" \
-  -H "Authorization: Bearer YOUR_TOKEN_HERE" \
-  -H "Content-Type: application/json" \
-  -d '{"content": "Great post!"}'
-```
-
-**6. Like a post**
-```bash
-curl -X POST "http://localhost:8002/likes/1" \
-  -H "Authorization: Bearer YOUR_TOKEN_HERE"
-```
-
+ 
+## Database Schema (Highlights)
+ 
+| Table | Purpose |
+|---|---|
+| `users` | Profile incl. `full_name`, `department`, `academic_year`, `bio`, `avatar_url`, `is_admin` |
+| `posts` | Discussions; optional `community_id`, `project_group_id` |
+| `comments`, `likes`, `follows` | Standard interaction tables |
+| `communities`, `community_members` | Communities and membership/roles |
+| `resources` | Uploaded files: name, path, type, size, optional `community_id` |
+| `assignments` | Title, description, `due_date`, `community_id` |
+| `project_groups`, `project_group_members` | Project spaces and membership/roles |
+| `announcements` | Title, content, optional `community_id`, `pinned` |
+| `notifications` | `type`, `message`, `related_id`, `is_read` |
+| `deleted_users`, `deleted_posts`, `deleted_comments` | Trigger-populated audit archive |
+ 
 ## Dependencies
-
+ 
 | Package | Purpose |
-|---------|---------|
-| **fastapi** (0.135.3) | Modern async web framework |
-| **uvicorn** (0.44.0) | ASGI server for running FastAPI |
-| **sqlalchemy** (2.0.50) | ORM for database operations |
-| **psycopg2-binary** | PostgreSQL database adapter |
-| **pydantic** | Request/response data validation |
-| **python-jose** | JWT token creation and verification |
-| **passlib** (1.7.4) | Password hashing abstraction |
-| **argon2-cffi** | Argon2 password hashing algorithm |
-| **python-dotenv** | Environment variable management |
-| **email-validator** | Email format validation in Pydantic |
-
-See `requirements.txt` for exact versions.
-
-## SDG 16: Peace, Justice and Strong Institutions
-
-**Why this matters**: Digital spaces are where youth build communities and ideas. This API ensures that platform is built on principles of security, accountability, and responsible engagement.
-
-### Implementation in This API:
-- ✅ **User Authentication & Accountability**: JWT tokens tie all actions to verified users
-- ✅ **Data Ownership & Control**: Only post owners can modify/delete their content
-- ✅ **Secure By Default**: Argon2 password hashing protects user accounts against attacks
-- ✅ **Data Integrity**: Clear foreign key relationships ensure referential integrity
-- ✅ **Community Building**: Comments and likes features enable constructive dialogue
-
-This API is a foundation for Sierra Leone youth to build responsible digital communities aligned with SDG 16.
-
+|---|---|
+| fastapi | Web framework |
+| uvicorn[standard] | ASGI server |
+| sqlalchemy | ORM |
+| psycopg2-binary | PostgreSQL driver |
+| pydantic[email] | Validation |
+| python-jose[cryptography] | JWT |
+| passlib[argon2] + argon2-cffi | Password hashing |
+| python-multipart | Form & file upload parsing |
+| python-dotenv | Env config |
+| slowapi | Login rate limiting |
+| alembic | Migrations |
+ 
 ## License
-
+ 
 This project is licensed under the MIT License - see the LICENSE file for details.
-
+ 
 ## Contributing
-
+ 
 1. Fork the repository
 2. Create a feature branch: `git checkout -b feature/your-feature`
 3. Commit changes: `git commit -m "Add your feature"`
 4. Push to branch: `git push origin feature/your-feature`
 5. Open a Pull Request
-
-## Issues & Support
-
-- **API Issues**: Check Swagger docs for endpoint details at `/docs`
-- **Database Issues**: Verify PostgreSQL is running on localhost:5432
-- **Auth Issues**: Ensure token is in `Authorization: Bearer <token>` format
-- **Questions**: See AUTHENTICATION_GUIDE.md and POSTGRESQL_SETUP.md for detailed guides
+ 

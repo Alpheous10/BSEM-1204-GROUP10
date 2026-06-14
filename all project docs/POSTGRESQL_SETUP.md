@@ -359,7 +359,7 @@ pip install -r requirements.txt
 **Solution:**
 - Use a different port:
 ```bash
-uvicorn main:app --reload --port 8001
+uvicorn main:app --reload --port 8002
 ```
 
 ### Port 8000 is already in use (something else using it):

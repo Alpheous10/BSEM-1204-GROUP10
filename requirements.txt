@@ -7,3 +7,7 @@ passlib[bcrypt]
 python-multipart
 pydantic[email]
 python-dotenv
+alembic
+bleach
+slowapi
+limits

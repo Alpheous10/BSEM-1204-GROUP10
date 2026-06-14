@@ -57,14 +57,14 @@ pip install -r requirements.txt
 
 ### 4. Run the Server
 ```bash
-uvicorn main:app --reload --port 8001
+uvicorn main:app --reload --port 8002
 ```
 
-The API will be available at `http://localhost:8001`
+The API will be available at `http://localhost:8002`
 
 ### 5. Access Documentation
-- **Swagger UI**: http://localhost:8001/docs
-- **ReDoc**: http://localhost:8001/redoc
+- **Swagger UI**: http://localhost:8002/docs
+- **ReDoc**: http://localhost:8002/redoc
 
 ## API Endpoints
 
@@ -190,7 +190,7 @@ BSEM-1204-GROUP10/
 ## Testing
 
 ### Using Swagger UI (Recommended)
-Navigate to: **http://localhost:8001/docs**
+Navigate to: **http://localhost:8002/docs**
 
 1. Click **"Authorize"** button
 2. Enter username and password
@@ -201,7 +201,7 @@ Navigate to: **http://localhost:8001/docs**
 
 **1. Register a user**
 ```bash
-curl -X POST "http://localhost:8001/auth/register" \
+curl -X POST "http://localhost:8002/auth/register" \
   -H "Content-Type: application/json" \
   -d '{
     "username": "khalil",
@@ -212,7 +212,7 @@ curl -X POST "http://localhost:8001/auth/register" \
 
 **2. Login (OAuth2 form-encoded)**
 ```bash
-curl -X POST "http://localhost:8001/auth/login" \
+curl -X POST "http://localhost:8002/auth/login" \
   -H "Content-Type: application/x-www-form-urlencoded" \
   -d "username=khalil&password=mypassword123"
 ```
@@ -227,7 +227,7 @@ Response:
 
 **3. Create a post (with JWT token)**
 ```bash
-curl -X POST "http://localhost:8001/posts/" \
+curl -X POST "http://localhost:8002/posts/" \
   -H "Authorization: Bearer YOUR_TOKEN_HERE" \
   -H "Content-Type: application/json" \
   -d '{
@@ -238,12 +238,12 @@ curl -X POST "http://localhost:8001/posts/" \
 
 **4. Get all posts**
 ```bash
-curl -X GET "http://localhost:8001/posts/"
+curl -X GET "http://localhost:8002/posts/"
 ```
 
 **5. Create a comment**
 ```bash
-curl -X POST "http://localhost:8001/comments/?post_id=1" \
+curl -X POST "http://localhost:8002/comments/?post_id=1" \
   -H "Authorization: Bearer YOUR_TOKEN_HERE" \
   -H "Content-Type: application/json" \
   -d '{"content": "Great post!"}'
@@ -251,7 +251,7 @@ curl -X POST "http://localhost:8001/comments/?post_id=1" \
 
 **6. Like a post**
 ```bash
-curl -X POST "http://localhost:8001/likes/1" \
+curl -X POST "http://localhost:8002/likes/1" \
   -H "Authorization: Bearer YOUR_TOKEN_HERE"
 ```
 

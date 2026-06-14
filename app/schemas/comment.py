@@ -10,6 +10,10 @@ class CommentCreate(CommentBase):
     pass
 
 
+class CommentUpdate(CommentBase):
+    pass
+
+
 class CommentResponse(CommentBase):
     id: int
     post_id: int

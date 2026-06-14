@@ -12,6 +12,13 @@ from app.models.user import User
 from app.models.post import Post
 from app.models.comment import Comment
 from app.models.like import Like
+from app.models.follow import Follow
+from app.models.community import Community, CommunityMember
+from app.models.resource import Resource
+from app.models.assignment import Assignment
+from app.models.project_group import ProjectGroup, ProjectGroupMember
+from app.models.announcement import Announcement
+from app.models.notification import Notification
 
 load_dotenv()
 

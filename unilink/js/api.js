@@ -6,7 +6,7 @@
 // Base URL points to the FastAPI server.
 // ================================================================
 
-const BASE_URL = 'http://127.0.0.1:8002';
+const BASE_URL = 'http://localhost:8002';
 
 // ── Token helpers ────────────────────────────────────────────────
 function getToken() {

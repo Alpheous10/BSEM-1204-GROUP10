@@ -27,14 +27,15 @@ oauth2_scheme = OAuth2PasswordBearer(
     tokenUrl="auth/login"
 )
 
-oauth2_scheme_optional = OAuth2PasswordBearer(
-    tokenUrl="auth/login",
-    auto_error=False
-)
 
-
-def verify_password(plain_password, hashed_password):
-    return pwd_context.verify(plain_password, hashed_password)
+def verify_password(
+    plain_password,
+    hashed_password
+):
+    return pwd_context.verify(
+        plain_password,
+        hashed_password
+    )
 
 
 def get_password_hash(password):
@@ -43,9 +44,19 @@ def get_password_hash(password):
 
 def create_access_token(data: dict):
     to_encode = data.copy()
-    expire = datetime.utcnow() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+
+    expire = datetime.utcnow() + timedelta(
+        minutes=ACCESS_TOKEN_EXPIRE_MINUTES
+    )
+
     to_encode.update({"exp": expire})
-    encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+
+    encoded_jwt = jwt.encode(
+        to_encode,
+        SECRET_KEY,
+        algorithm=ALGORITHM
+    )
+
     return encoded_jwt
 
 
@@ -60,32 +71,25 @@ def get_current_user(
     )
 
     try:
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        payload = jwt.decode(
+            token,
+            SECRET_KEY,
+            algorithms=[ALGORITHM]
+        )
+
         username: str = payload.get("sub")
+
         if username is None:
             raise credentials_exception
+
     except JWTError:
         raise credentials_exception
 
-    user = db.query(User).filter(User.username == username).first()
+    user = db.query(User).filter(
+        User.username == username
+    ).first()
+
     if user is None:
         raise credentials_exception
 
     return user
-
-
-def get_current_user_optional(
-    token: str = Depends(oauth2_scheme_optional),
-    db: Session = Depends(get_db)
-):
-    if token is None:
-        return None
-    try:
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        username: str = payload.get("sub")
-        if username is None:
-            return None
-    except JWTError:
-        return None
-
-    return db.query(User).filter(User.username == username).first()

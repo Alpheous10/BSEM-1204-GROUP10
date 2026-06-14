@@ -337,7 +337,7 @@ schema.sql                   # Database schema
 
 ### Manual Testing (Swagger UI)
 
-1. Access http://localhost:8002/docs
+1. Access http://localhost:8001/docs
 2. Click **Authorize** → Enter credentials → Get JWT token
 3. Try endpoints with token
 4. Verify ownership restrictions work
@@ -347,30 +347,30 @@ schema.sql                   # Database schema
 
 ```bash
 # Register
-curl -X POST "http://localhost:8002/auth/register" \
+curl -X POST "http://localhost:8001/auth/register" \
   -H "Content-Type: application/json" \
   -d '{"username":"khalil","email":"khalil@example.com","password":"pass123"}'
 
 # Login
-curl -X POST "http://localhost:8002/auth/login" \
+curl -X POST "http://localhost:8001/auth/login" \
   -H "Content-Type: application/x-www-form-urlencoded" \
   -d "username=khalil&password=pass123"
 
 # Create Post (with token)
 TOKEN="eyJhbGciOi..."
-curl -X POST "http://localhost:8002/posts/" \
+curl -X POST "http://localhost:8001/posts/" \
   -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{"title":"SDG 16","content":"Peace through digital dialogue"}'
 
 # Comment on Post
-curl -X POST "http://localhost:8002/comments/?post_id=1" \
+curl -X POST "http://localhost:8001/comments/?post_id=1" \
   -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{"content":"Great point!"}'
 
 # Like a Post
-curl -X POST "http://localhost:8002/likes/1" \
+curl -X POST "http://localhost:8001/likes/1" \
   -H "Authorization: Bearer $TOKEN"
 ```
 
@@ -405,13 +405,13 @@ pip install -r requirements.txt
 
 **4. Run Server**
 ```bash
-uvicorn main:app --reload --port 8002
+uvicorn main:app --reload --port 8001
 ```
 
 **5. Access**
-- API: http://localhost:8002
-- Docs: http://localhost:8002/docs
-- ReDoc: http://localhost:8002/redoc
+- API: http://localhost:8001
+- Docs: http://localhost:8001/docs
+- ReDoc: http://localhost:8001/redoc
 
 ### Production Deployment Checklist
 
@@ -590,7 +590,7 @@ This project shows we can build **secure, scalable, documented** software that s
 
 ### API Base URL
 ```
-http://localhost:8002
+http://localhost:8001
 ```
 
 ### JWT Token Usage

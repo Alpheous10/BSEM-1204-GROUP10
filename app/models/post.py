@@ -11,11 +11,7 @@ class Post(Base):
     title = Column(String, nullable=False)
     content = Column(Text, nullable=False)
     user_id = Column(Integer, ForeignKey("users.id"))
-    community_id = Column(Integer, ForeignKey("communities.id"), nullable=True)
-    project_group_id = Column(Integer, ForeignKey("project_groups.id"), nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     user = relationship("User", backref="posts")
-    community = relationship("Community")
-    project_group = relationship("ProjectGroup")

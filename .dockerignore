@@ -1,7 +1,0 @@
-__pycache__
-*.pyc
-.env
-.git
-.gitignore
-alembic/versions/*.pyc
-social_media.db

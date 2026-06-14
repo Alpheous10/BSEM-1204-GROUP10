@@ -33,7 +33,7 @@ Complete guide on how to authenticate and authorize with the Social Media Post A
 
 ### Using Swagger UI:
 
-1. Open http://localhost:8001/docs
+1. Open http://localhost:8002/docs
 2. Click **POST /auth/register**
 3. Click **Try it out**
 4. Enter this JSON:
@@ -57,7 +57,7 @@ Complete guide on how to authenticate and authorize with the Social Media Post A
 
 ### Using cURL:
 ```bash
-curl -X POST "http://localhost:8001/auth/register" \
+curl -X POST "http://localhost:8002/auth/register" \
   -H "Content-Type: application/json" \
   -d '{
     "username": "khalil",
@@ -96,7 +96,7 @@ curl -X POST "http://localhost:8001/auth/register" \
 
 ### Using cURL:
 ```bash
-curl -X POST "http://localhost:8001/auth/login" \
+curl -X POST "http://localhost:8002/auth/login" \
   -H "Content-Type: application/json" \
   -d '{
     "username": "khalil",
@@ -149,7 +149,7 @@ Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJraGFsaWwiLCJleHAiOjE3MTcw
 ### Create a Post (Protected Endpoint):
 
 ```bash
-curl -X POST "http://localhost:8001/posts/" \
+curl -X POST "http://localhost:8002/posts/" \
   -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJiYWthcnIiLCJleHAiOjE3ODAwMDc0MjJ9.oZBdOdaCBa1DF75HVDm5vDvMgQY_BDzK8MXjQHoVgqA" \
   -H "Content-Type: application/json" \
   -d '{
@@ -163,14 +163,14 @@ Replace `YOUR_TOKEN_HERE` with your actual token from login.
 ### Like a Post:
 
 ```bash
-curl -X POST "http://localhost:8001/likes/1" \
+curl -X POST "http://localhost:8002/likes/1" \
   -H "Authorization: Bearer YOUR_TOKEN_HERE"
 ```
 
 ### Create a Comment:
 
 ```bash
-curl -X POST "http://localhost:8001/comments/?post_id=1" \
+curl -X POST "http://localhost:8002/comments/?post_id=1" \
   -H "Authorization: Bearer YOUR_TOKEN_HERE" \
   -H "Content-Type: application/json" \
   -d '{
@@ -259,7 +259,7 @@ These endpoints **do NOT require authentication**:
 **Problem:** The 🔓 Authorize button is not visible in Swagger
 
 **Solution:**
-1. Refresh the page: `http://localhost:8001/docs`
+1. Refresh the page: `http://localhost:8002/docs`
 2. Or use manual headers method (see above)
 
 ### "Bearer not working"
@@ -283,7 +283,7 @@ eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJraGFsaWwiLCJleHAiOjE3MTcwODY3NzV
 
 ### Step 1: Register
 ```bash
-curl -X POST "http://localhost:8001/auth/register" \
+curl -X POST "http://localhost:8002/auth/register" \
   -H "Content-Type: application/json" \
   -d '{
     "username": "khalil",
@@ -303,7 +303,7 @@ Response:
 
 ### Step 2: Login
 ```bash
-curl -X POST "http://localhost:8001/auth/login" \
+curl -X POST "http://localhost:8002/auth/login" \
   -H "Content-Type: application/json" \
   -d '{
     "username": "khalil",
@@ -322,7 +322,7 @@ Response:
 
 ### Step 3: Create Post (Using Token)
 ```bash
-curl -X POST "http://localhost:8001/posts/" \
+curl -X POST "http://localhost:8002/posts/" \
   -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." \
   -H "Content-Type: application/json" \
   -d '{
@@ -345,7 +345,7 @@ Response:
 
 ### Step 4: Like the Post
 ```bash
-curl -X POST "http://localhost:8001/likes/1" \
+curl -X POST "http://localhost:8002/likes/1" \
   -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
 ```
 
@@ -358,7 +358,7 @@ Response:
 
 ### Step 5: Create Comment
 ```bash
-curl -X POST "http://localhost:8001/comments/?post_id=1" \
+curl -X POST "http://localhost:8002/comments/?post_id=1" \
   -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." \
   -H "Content-Type: application/json" \
   -d '{

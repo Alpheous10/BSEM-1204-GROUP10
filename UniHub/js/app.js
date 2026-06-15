@@ -1,5 +1,5 @@
 // ================================================================
-// APP MODULE - UniLink State & Logic
+// APP MODULE - UniHub State & Logic
 // ================================================================
 
 // ── Global State ──────────────────────────────────────────────────
@@ -63,7 +63,7 @@ async function loadDashboardData() {
     if (currentUser) {
       const displayName = user.full_name || currentUser.username;
       if (profileUser) profileUser.textContent = displayName;
-      if (profileBio) profileBio.textContent = currentUser.bio || 'UniLink Member';
+      if (profileBio) profileBio.textContent = currentUser.bio || 'UniHub Member';
       const initials = (user.full_name || currentUser.username)[0].toUpperCase();
       if (profileAvatar) profileAvatar.textContent = initials;
       if (topAvatar) topAvatar.textContent = initials;

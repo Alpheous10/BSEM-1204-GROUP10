@@ -6,14 +6,14 @@ function renderNav(activePage, user = null) {
   ];
 
   const displayName = user ? user.username : 'Guest User';
-  const displayRole = user ? (user.bio || 'UniLink Member') : 'Sign in to join';
+  const displayRole = user ? (user.bio || 'UniHub Member') : 'Sign in to join';
   const initials = user ? user.username[0].toUpperCase() : '?';
 
   return `
   <aside class="sidebar">
     <div class="sidebar-brand">
       <div class="logo-mark">U</div>
-      <span class="logo-text">UniLink</span>
+      <span class="logo-text">UniHub</span>
     </div>
 
     <div class="sidebar-nav">

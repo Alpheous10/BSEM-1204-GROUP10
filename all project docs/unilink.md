@@ -609,7 +609,7 @@ The platform should become a centralized academic hub for students throughout ea
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>UniLink — Sign In</title>
+<title>UniHub — Sign In</title>
 <link rel="stylesheet" href="styles.css" />
 <style>
   body { background: #F0F2FF; display: flex; min-height: 100vh; font-family: var(--font-body); }
@@ -920,7 +920,7 @@ The platform should become a centralized academic hub for students throughout ea
   <div class="auth-left">
     <div class="auth-brand">
       <div class="logo-mark">U</div>
-      <span class="brand-name">UniLink</span>
+      <span class="brand-name">UniHub</span>
     </div>
 
     <div class="auth-hero">
@@ -955,7 +955,7 @@ The platform should become a centralized academic hub for students throughout ea
       </ul>
     </div>
 
-    <div class="auth-tagline">© 2025 UniLink · Built for students, by students.</div>
+    <div class="auth-tagline">© 2025 UniHub · Built for students, by students.</div>
   </div>
 
   <!-- RIGHT -->
@@ -971,7 +971,7 @@ The platform should become a centralized academic hub for students throughout ea
       <!-- LOGIN -->
       <div id="panel-login" class="panel active">
         <h3>Welcome back 👋</h3>
-        <p class="sub">Sign in to continue to UniLink</p>
+        <p class="sub">Sign in to continue to UniHub</p>
 
         <div class="form-group">
           <label class="form-label">University Email</label>
@@ -1003,7 +1003,7 @@ The platform should become a centralized academic hub for students throughout ea
 
       <!-- REGISTER -->
       <div id="panel-register" class="panel">
-        <h3>Join UniLink</h3>
+        <h3>Join UniHub</h3>
         <p class="sub">Create your academic profile to get started</p>
 
         <div class="form-row">
@@ -1096,7 +1096,7 @@ function renderNav(activePage) {
   <aside class="sidebar">
     <div class="sidebar-logo">
       <div class="logo-mark">U</div>
-      <span class="logo-text">UniLink</span>
+      <span class="logo-text">UniHub</span>
     </div>
 
     <div class="sidebar-section">
@@ -1130,7 +1130,7 @@ function renderNav(activePage) {
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>UniLink — Dashboard</title>
+<title>UniHub — Dashboard</title>
 <link rel="stylesheet" href="styles.css" />
 <style>
 /* Dashboard specific */
@@ -1718,7 +1718,7 @@ function renderNav(activePage) {
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>UniLink — Communities</title>
+<title>UniHub — Communities</title>
 <link rel="stylesheet" href="styles.css" />
 <style>
 .comm-card {
@@ -2167,7 +2167,7 @@ function renderNav(activePage) {
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>UniLink — Software Engineering Community</title>
+<title>UniHub — Software Engineering Community</title>
 <link rel="stylesheet" href="styles.css" />
 <style>
 .comm-hero {

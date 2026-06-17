@@ -1,6 +1,6 @@
 function renderNav(activePage, user = null) {
   const primaryPages = [
-    { id: 'dashboard', label: 'Dashboard', href: 'dashboard.html', icon: 'layout' },
+    { id: 'dashboard', label: 'Central', href: 'central.html', icon: 'home' },
     { id: 'communities', label: 'Communities', href: 'communities.html', icon: 'users' },
     { id: 'resources', label: 'Resources', href: 'resources.html', icon: 'folder' },
     { id: 'assignments', label: 'Assignments', href: 'assignments.html', icon: 'clipboard' },
@@ -13,7 +13,7 @@ function renderNav(activePage, user = null) {
   return `
   <nav class="topbar">
     <div class="topbar-left">
-      <a href="dashboard.html" class="topbar-logo">
+      <a href="central.html" class="topbar-logo">
         <img src="logo/unihub.png" alt="U" class="logo-mark" style="object-fit: cover;">
         <span class="logo-text">UniHub</span>
       </a>
@@ -32,7 +32,9 @@ function renderNav(activePage, user = null) {
         <i data-lucide="bell" style="width:20px; height:20px;"></i>
         <span class="badge" id="notif-badge" style="display:none; position:absolute; top:8px; right:8px; width:8px; height:8px; background:var(--color-danger-500); border-radius:50%; border:2px solid var(--color-surface);"></span>
       </button>
-      <div class="topbar-avatar" onclick="window.location.href='profile.html'" title="View Profile">${initials}</div>
+      <div class="topbar-avatar" onclick="window.location.href='profile.html'" title="View Profile">
+        ${user?.avatar_url ? `<img src="${user.avatar_url}" alt="" style="width:100%; height:100%; object-fit:cover; border-radius:50%;">` : initials}
+      </div>
     </div>
   </nav>
 

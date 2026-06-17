@@ -102,6 +102,21 @@ async function formRequest(path, fields) {
   return data;
 }
 
+// ── File upload request ──────────────────────────────────────────
+async function uploadFile(path, file) {
+  const token = getToken();
+  const form = new FormData();
+  form.append('file', file);
+  const res = await fetch(`${BASE_URL}${path}`, {
+    method: 'POST',
+    headers: token ? { 'Authorization': `Bearer ${token}` } : {},
+    body: form,
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.detail || 'Upload failed');
+  return data;
+}
+
 // ================================================================
 // API METHODS
 // ================================================================
@@ -242,5 +257,10 @@ const api = {
 
   dashboard: {
     get: () => request('GET', '/dashboard/'),
+  },
+
+  uploads: {
+    avatar: (file) => uploadFile('/uploads/avatar', file),
+    postImage: (file) => uploadFile('/uploads/post-image', file),
   },
 };

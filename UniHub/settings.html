@@ -27,6 +27,36 @@
         <div class="grid-dash">
           <div class="settings-main">
             <div class="card mb-8">
+              <h2 style="font-size:var(--text-lg); font-weight:var(--font-bold); margin-bottom:var(--space-6);">Profile Picture</h2>
+              <div class="avatar-upload-section" style="display:flex; flex-direction:column; gap:var(--space-4); align-items:flex-start;">
+                <img id="avatar-preview" src="" alt="Avatar" style="width:96px; height:96px; border-radius:50%; object-fit:cover; border:2px solid var(--color-border);">
+                <div class="avatar-controls" style="display:flex; gap:var(--space-3); align-items:center;">
+                  <input type="file" id="avatar-file-input" accept="image/*" style="display:none;">
+                  <button class="btn btn-outline btn-sm" onclick="document.getElementById('avatar-file-input').click()">
+                    <i data-lucide="upload"></i> Change Photo
+                  </button>
+                  <div id="avatar-upload-status" style="display:none; gap:var(--space-3); align-items:center;">
+                    <img id="avatar-temp-preview" src="" alt="Preview" style="width:48px; height:48px; border-radius:50%; object-fit:cover;">
+                    <span id="avatar-file-info" style="font-size:var(--text-sm); color:var(--color-text);"></span>
+                    <button class="btn btn-primary btn-sm" id="upload-avatar-btn" onclick="handleUploadAvatar()">
+                      <i data-lucide="check"></i> Upload
+                    </button>
+                    <button class="btn btn-outline btn-sm" onclick="cancelAvatarUpload()">
+                      <i data-lucide="x"></i> Cancel
+                    </button>
+                  </div>
+                </div>
+                <details>
+                  <summary style="font-size:var(--text-sm); color:var(--color-text-subtle); cursor:pointer;">Or use a URL instead</summary>
+                  <div class="form-group mt-4">
+                    <label class="form-label">Avatar URL</label>
+                    <input type="text" name="avatar_url" id="s-avatar-url" class="form-control" placeholder="https://example.com/avatar.jpg">
+                  </div>
+                </details>
+              </div>
+            </div>
+
+            <div class="card mb-8">
               <h2 style="font-size:var(--text-lg); font-weight:var(--font-bold); margin-bottom:var(--space-6);">Public Profile</h2>
               <form id="profile-settings-form" onsubmit="handleUpdateProfile(event)">
                 <div class="grid-2">
@@ -93,6 +123,8 @@
   </div>
 
   <script>
+    let selectedAvatarFile = null;
+
     async function loadSettings() {
       try {
         const user = await api.users.me();
@@ -101,8 +133,49 @@
         document.getElementById('s-bio').value = user.bio || '';
         document.getElementById('s-dept').value = user.department || '';
         document.getElementById('s-year').value = user.academic_year || 'Year 1';
+        document.getElementById('s-avatar-url').value = user.avatar_url || '';
+        document.getElementById('avatar-preview').src = user.avatar_url || 'https://api.dicebear.com/7.x/avataaars/svg?seed=' + user.username;
       } catch (err) {
         console.error('Failed to load settings:', err);
+      }
+    }
+
+    document.getElementById('avatar-file-input').addEventListener('change', function(e) {
+      const file = e.target.files[0];
+      if (file) {
+        selectedAvatarFile = file;
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          document.getElementById('avatar-temp-preview').src = e.target.result;
+          document.getElementById('avatar-file-info').textContent = file.name + ' (' + (file.size / 1024 / 1024).toFixed(2) + ' MB)';
+          document.getElementById('avatar-upload-status').style.display = 'flex';
+        };
+        reader.readAsDataURL(file);
+      }
+    });
+
+    function cancelAvatarUpload() {
+      selectedAvatarFile = null;
+      document.getElementById('avatar-upload-status').style.display = 'none';
+      document.getElementById('avatar-file-input').value = '';
+    }
+
+    async function handleUploadAvatar() {
+      if (!selectedAvatarFile) return;
+      const btn = document.getElementById('upload-avatar-btn');
+      try {
+        setLoading(btn, true);
+        const result = await api.uploads.avatar(selectedAvatarFile);
+        document.getElementById('avatar-preview').src = result.avatar_url;
+        const user = JSON.parse(localStorage.getItem('currentUser'));
+        user.avatar_url = result.avatar_url;
+        localStorage.setItem('currentUser', JSON.stringify(user));
+        alert('Profile picture updated!');
+        cancelAvatarUpload();
+      } catch (err) {
+        alert(err.message);
+      } finally {
+        setLoading(btn, false);
       }
     }
 

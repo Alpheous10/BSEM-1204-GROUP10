@@ -3,7 +3,6 @@
 // ================================================================
 
 let currentUser = null;
-let currentPostImageUrl = null; // Store the uploaded image URL
 
 // ── Initialization ───────────────────────────────────────────────
 async function initApp() {
@@ -15,7 +14,7 @@ async function initApp() {
       currentUser = await api.users.me();
       localStorage.setItem('currentUser', JSON.stringify(currentUser));
       if (isAuthPage) {
-        window.location.href = 'central.html';
+        window.location.href = 'dashboard.html';
         return;
       }
       initSearch();
@@ -205,19 +204,14 @@ function renderDiscussionCard(post) {
   return `
     <article class="card discussion-card card-clickable" onclick="window.location.href='post-detail.html?id=${post.id}'">
       <div class="meta" style="display: flex; align-items: center; gap: var(--space-2); font-size: var(--text-xs); color: var(--color-text-muted); margin-bottom: var(--space-3);">
-        <div class="topbar-avatar" style="width:24px; height:24px; font-size:10px; border-radius:50%; overflow:hidden;">
-          ${post.author?.avatar_url ? `<img src="${post.author.avatar_url}" style="width:100%; height:100%; object-fit:cover;">` : initials}
-        </div>
+        <div class="topbar-avatar" style="width:24px; height:24px; font-size:10px;">${initials}</div>
         <span style="font-weight: var(--font-medium); color: var(--color-text);">${esc(authorName)}</span>
         <span>•</span>
         <span>${formatTimeAgo(post.created_at)}</span>
         <span style="margin-left: auto;">${communityLabel}</span>
       </div>
       <h2 style="font-size: var(--text-lg); font-weight: var(--font-bold); color: var(--color-text); margin-bottom: var(--space-2); line-height: var(--leading-tight);">${esc(post.title)}</h2>
-      <div style="display:flex; gap:var(--space-4); align-items:flex-start;">
-        <p class="preview" style="flex:1; font-size: var(--text-sm); color: var(--color-text-muted); line-height: var(--leading-normal); display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;">${esc(post.content)}</p>
-        ${post.image_url ? `<img src="${post.image_url}" style="width:120px; height:120px; object-fit:cover; border-radius:var(--radius-md); cursor:pointer;" onclick="event.stopPropagation(); window.open('${post.image_url}','_blank');">` : ''}
-      </div>
+      <p class="preview" style="font-size: var(--text-sm); color: var(--color-text-muted); line-height: var(--leading-normal); display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;">${esc(post.content)}</p>
       <div class="flex-between" style="margin-top: var(--space-4); padding-top: var(--space-3); border-top: 1px solid var(--color-border);">
         <div style="display:flex; gap:var(--space-6);">
           <span style="display:flex; align-items:center; gap:var(--space-1); font-size:var(--text-xs); color:var(--color-text-muted); cursor: pointer;" onclick="event.stopPropagation(); handleLike(${post.id})">
@@ -310,7 +304,7 @@ async function handleLogin() {
     localStorage.setItem('token', data.access_token);
     const user = await api.users.me();
     localStorage.setItem('currentUser', JSON.stringify(user));
-    window.location.href = 'central.html';
+    window.location.href = 'dashboard.html';
   } catch (err) {
     showError(errorEl, err.message);
   } finally {
@@ -332,7 +326,7 @@ async function handleRegister() {
     localStorage.setItem('token', loginData.access_token);
     const user = await api.users.me();
     localStorage.setItem('currentUser', JSON.stringify(user));
-    window.location.href = 'central.html';
+    window.location.href = 'dashboard.html';
   } catch (err) {
     showError(errorEl, err.message);
   } finally {
@@ -359,7 +353,6 @@ async function handleLike(postId) {
 
 async function openCreatePostModal() {
   const communities = await api.communities.getMy();
-  currentPostImageUrl = null; // Reset image URL when opening modal
   
   const modalHtml = `
     <div class="modal-overlay open" id="create-post-modal">
@@ -384,20 +377,6 @@ async function openCreatePostModal() {
             <label class="form-label">Content</label>
             <textarea name="content" class="form-control" rows="5" placeholder="Share your thoughts..." required></textarea>
           </div>
-          <div class="form-group" id="image-upload-section">
-            <label class="form-label">Attach Image (optional)</label>
-            <div id="image-drop-zone" style="border:2px dashed var(--color-border); border-radius:var(--radius-md); padding:var(--space-6); text-align:center; cursor:pointer;">
-              <i data-lucide="upload-cloud" style="width:32px; height:32px; color:var(--color-text-muted); margin-bottom:var(--space-2);"></i>
-              <p style="color:var(--color-text-muted); font-size:var(--text-sm);">Click to select or drag and drop an image</p>
-              <input type="file" id="post-image-input" accept="image/*" style="display:none;">
-            </div>
-            <div id="image-preview-container" style="display:none; margin-top:var(--space-4); position:relative;">
-              <img id="post-image-preview" style="width:100%; max-height:200px; object-fit:cover; border-radius:var(--radius-md);">
-              <button type="button" id="remove-image-btn" style="position:absolute; top:8px; right:8px; background:var(--color-surface); border:1px solid var(--color-border); border-radius:var(--radius-full); width:32px; height:32px; display:flex; align-items:center; justify-content:center; cursor:pointer;">
-                <i data-lucide="x" style="width:16px; height:16px;"></i>
-              </button>
-            </div>
-          </div>
           <div class="flex-center mt-4">
             <button type="submit" class="btn btn-primary btn-full" id="create-post-btn">Post Discussion</button>
           </div>
@@ -407,63 +386,7 @@ async function openCreatePostModal() {
   `;
   
   document.body.insertAdjacentHTML('beforeend', modalHtml);
-  
-  // Add event listeners for image upload
-  const dropZone = document.getElementById('image-drop-zone');
-  const fileInput = document.getElementById('post-image-input');
-  const previewContainer = document.getElementById('image-preview-container');
-  const previewImg = document.getElementById('post-image-preview');
-  const removeBtn = document.getElementById('remove-image-btn');
-  
-  dropZone.addEventListener('click', () => fileInput.click());
-  dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.style.borderColor = 'var(--color-primary-500)'; });
-  dropZone.addEventListener('dragleave', () => dropZone.style.borderColor = 'var(--color-border)');
-  dropZone.addEventListener('drop', (e) => {
-    e.preventDefault();
-    dropZone.style.borderColor = 'var(--color-border)';
-    if (e.dataTransfer.files.length) handleImageSelect(e.dataTransfer.files[0]);
-  });
-  fileInput.addEventListener('change', (e) => { if (e.target.files.length) handleImageSelect(e.target.files[0]); });
-  removeBtn.addEventListener('click', handleRemoveImage);
-  
   initIcons();
-}
-
-async function handleImageSelect(file) {
-  const previewContainer = document.getElementById('image-preview-container');
-  const previewImg = document.getElementById('post-image-preview');
-  const dropZone = document.getElementById('image-drop-zone');
-  const createBtn = document.getElementById('create-post-btn');
-  
-  try {
-    setLoading(createBtn, true);
-    const result = await api.uploads.postImage(file);
-    currentPostImageUrl = result.image_url;
-    
-    // Show preview
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      previewImg.src = e.target.result;
-      previewContainer.style.display = 'block';
-      dropZone.style.display = 'none';
-    };
-    reader.readAsDataURL(file);
-  } catch (err) {
-    alert(err.message);
-  } finally {
-    setLoading(createBtn, false);
-  }
-}
-
-function handleRemoveImage() {
-  const previewContainer = document.getElementById('image-preview-container');
-  const dropZone = document.getElementById('image-drop-zone');
-  const fileInput = document.getElementById('post-image-input');
-  
-  currentPostImageUrl = null;
-  previewContainer.style.display = 'none';
-  dropZone.style.display = 'block';
-  fileInput.value = '';
 }
 
 async function handleCreatePost() {
@@ -472,15 +395,12 @@ async function handleCreatePost() {
   const formData = new FormData(form);
   const data = Object.fromEntries(formData.entries());
   
-  if (currentPostImageUrl) {
-    data.image_url = currentPostImageUrl;
-  }
-  
   try {
     setLoading(btn, true);
     await api.posts.create(data);
     closeModal('create-post-modal');
     if (typeof initDashboard === 'function') initDashboard();
+    // Show success message if possible
   } catch (err) {
     alert(err.message);
   } finally {
@@ -541,6 +461,7 @@ async function handleUploadResource() {
     await api.resources.create(formData);
     closeModal('upload-resource-modal');
     if (window.location.pathname.endsWith('resources.html')) {
+        // Refresh resources if on the resources page
         if (typeof loadResources === 'function') loadResources();
     } else if (typeof initDashboard === 'function') {
         initDashboard();

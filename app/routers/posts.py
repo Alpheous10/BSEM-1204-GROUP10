@@ -117,6 +117,7 @@ def update_post(
 
     post.title = updated_post.title
     post.content = updated_post.content
+    post.image_url = updated_post.image_url
     db.commit()
     db.refresh(post)
     return build_post_response(post, db, current_user)

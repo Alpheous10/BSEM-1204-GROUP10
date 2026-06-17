@@ -6,6 +6,7 @@ from typing import Optional
 class PostBase(BaseModel):
     title: str
     content: str
+    image_url: Optional[str] = None
 
 
 class PostCreate(PostBase):

@@ -13,6 +13,7 @@ class Post(Base):
     user_id = Column(Integer, ForeignKey("users.id"))
     community_id = Column(Integer, ForeignKey("communities.id"), nullable=True)
     project_group_id = Column(Integer, ForeignKey("project_groups.id"), nullable=True)
+    image_url = Column(String, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 

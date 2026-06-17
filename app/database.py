@@ -8,6 +8,10 @@ load_dotenv()
 
 DATABASE_URL = os.getenv("DATABASE_URL")
 
+# Convert postgres:// to postgresql:// if needed (for Supabase compatibility)
+if DATABASE_URL and DATABASE_URL.startswith("postgres://"):
+    DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
+
 # Supabase connection pool settings
 # pool_pre_ping keeps connections alive through Supabase's idle-timeout resets
 engine = create_engine(

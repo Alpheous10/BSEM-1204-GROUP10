@@ -2,7 +2,6 @@
 // APP MODULE - UniHub State & Logic
 // ================================================================
 
-// ── Global State ──────────────────────────────────────────────────
 let currentUser = null;
 
 // ── Initialization ───────────────────────────────────────────────
@@ -13,26 +12,17 @@ async function initApp() {
   if (token) {
     try {
       currentUser = await api.users.me();
+      localStorage.setItem('currentUser', JSON.stringify(currentUser));
       if (isAuthPage) {
         window.location.href = 'dashboard.html';
         return;
       }
-      // Render dynamic sidebar
-      const mount = document.getElementById('sidebar-mount');
-      if (mount) {
-        const activePage = mount.dataset.active || 'dashboard';
-        mount.outerHTML = renderNav(activePage, currentUser);
-      }
-      
-      // Load page specific data
-      if (window.location.pathname.includes('dashboard.html')) {
-        loadDashboardData();
-      } else if (window.location.pathname.includes('communities.html')) {
-        loadCommunitiesData();
-      }
+      initSearch();
+      updateNotifBadge();
     } catch (err) {
       console.error('Failed to fetch user:', err);
       localStorage.removeItem('token');
+      localStorage.removeItem('currentUser');
       if (!isAuthPage) window.location.href = 'index.html';
     }
   } else {
@@ -40,249 +30,250 @@ async function initApp() {
   }
 }
 
-// ── Dashboard Data ──────────────────────────────────────────────
-
-async function loadDashboardData() {
+// ── Dashboard Logic ──────────────────────────────────────────────
+async function initDashboard() {
   try {
     const dashboard = await api.dashboard.get();
-    const { user, my_communities, upcoming_assignments, recent_resources, recent_discussions, announcements, unread_notifications } = dashboard;
-
-    // Update welcome banner
-    const welcomeH2 = document.querySelector('.welcome-banner h2');
-    if (welcomeH2 && user) {
-      const displayName = user.full_name || user.username;
-      welcomeH2.textContent = `Good morning, ${displayName}`;
-    }
-
-    // Update Profile Mini
-    const profileUser = document.getElementById('profile-username');
-    const profileBio = document.getElementById('profile-bio');
-    const profileAvatar = document.getElementById('profile-avatar');
-    const topAvatar = document.getElementById('top-avatar');
+    const user = dashboard.user || currentUser;
     
-    if (currentUser) {
-      const displayName = user.full_name || currentUser.username;
-      if (profileUser) profileUser.textContent = displayName;
-      if (profileBio) profileBio.textContent = currentUser.bio || 'UniHub Member';
-      const initials = (user.full_name || currentUser.username)[0].toUpperCase();
-      if (profileAvatar) profileAvatar.textContent = initials;
-      if (topAvatar) topAvatar.textContent = initials;
-    }
-
-    // Fetch User Stats (followers, following, posts)
-    if (currentUser) {
-      const fullUser = await api.users.getUser(currentUser.id);
-      document.getElementById('stat-followers').textContent = fullUser.follower_count || 0;
-      document.getElementById('stat-following').textContent = fullUser.following_count || 0;
+    // Greeting
+    const greetingText = document.getElementById('greeting-text');
+    const greetingSub = document.getElementById('greeting-sub');
+    if (greetingText) {
+      const hour = new Date().getHours();
+      let timeOfDay = 'morning';
+      if (hour >= 12 && hour < 17) timeOfDay = 'afternoon';
+      else if (hour >= 17 && hour < 22) timeOfDay = 'evening';
+      else if (hour >= 22 || hour < 5) timeOfDay = 'night';
       
-      const userPosts = await api.users.getUserPosts(currentUser.id);
-      document.getElementById('stat-posts').textContent = userPosts.length || 0;
+      const name = user.full_name || user.username;
+      const greetMap = {
+        morning: `Good morning, ${name}`,
+        afternoon: `Good afternoon, ${name}`,
+        evening: `Good evening, ${name}`,
+        night: `Working late, ${name}?`
+      };
+      greetingText.textContent = greetMap[timeOfDay];
+      
+      const dueCount = dashboard.upcoming_assignments.length;
+      const notifCount = dashboard.unread_notifications;
+      greetingSub.textContent = `You have ${dueCount} assignments due this week and ${notifCount} new notifications.`;
     }
 
-    // Render dashboard content
-    renderRecentDiscussions(recent_discussions);
-    renderMyCommunities(my_communities);
-    renderUpcomingAssignments(upcoming_assignments);
-    renderRecentResources(recent_resources);
-    renderAnnouncements(announcements);
-    renderUnreadNotifications(unread_notifications);
-    
-  } catch (err) {
-    console.error('Error loading dashboard:', err);
-  }
-}
+    // Stats
+    document.getElementById('stat-communities').textContent = dashboard.my_communities.length;
+    document.getElementById('stat-resources').textContent = dashboard.recent_resources.length;
+    document.getElementById('stat-assignments').textContent = dashboard.upcoming_assignments.length;
+    document.getElementById('stat-notifs').textContent = dashboard.unread_notifications;
 
-function renderRecentDiscussions(posts) {
-  const container = document.getElementById('discussions-container');
-  if (!container) return;
-  
-  if (!posts || posts.length === 0) {
-    container.innerHTML = '<p style="padding: 20px; text-align: center; color: var(--gray-500);">No recent discussions found.</p>';
-    return;
-  }
+    // My Communities Scroll
+    const commScroll = document.getElementById('my-communities-scroll');
+    const commNavSection = document.getElementById('my-communities-section');
+    const commNavList = document.getElementById('my-communities-nav-list');
 
-  container.innerHTML = posts.map(post => {
-    const authorName = post.author ? post.author.username : `User ${post.user_id}`;
-    const initials = authorName[0].toUpperCase();
-    const timeAgo = formatTimeAgo(post.created_at);
-    return `
-      <div class="discussion-item" onclick="window.location.href='post-detail.html?id=${post.id}'" style="cursor: pointer;">
-        <div class="disc-avatar">${initials}</div>
-        <div class="disc-body">
-          <div class="disc-title">${esc(post.title)}</div>
-          <div class="disc-meta">${esc(authorName)} · ${timeAgo}</div>
-          <div class="disc-reactions">
-            <span class="disc-reaction">
-              <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M6.633 10.5c.806 0 1.533-.446 2.031-1.08a9.041 9.041 0 012.861-2.4c.723-.384 1.35-.956 1.653-1.715a4.498 4.498 0 00.322-1.672V3a.75.75 0 01.75-.75A2.25 2.25 0 0116.5 4.5c0 1.152-.26 2.243-.723 3.218-.266.558.107 1.282.725 1.282h3.126c1.026 0 1.945.694 2.054 1.715.045.422.068.85.068 1.285a11.95 11.95 0 01-2.649 7.521c-.388.482-.987.729-1.605.729H13.48c-.483 0-.964-.078-1.423-.23l-3.114-1.04a4.501 4.501 0 00-1.423-.23H5.253m0 0H3.75"/></svg>
-              ${post.like_count || 0} Likes
-            </span>
-            <span class="disc-reaction">
-              <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M20.25 8.511c.884.284 1.5 1.128 1.5 2.097v4.286c0 1.136-.847 2.1-1.98 2.193-.34.027-.68.052-1.02.072v3.091l-3-3c-1.354 0-2.694-.055-4.02-.163a2.115 2.115 0 01-.825-.242m9.345-8.334a2.126 2.126 0 00-.476-.095 48.64 48.64 0 00-8.048 0c-1.131.094-1.976 1.057-1.976 2.192v4.286c0 .837.46 1.58 1.155 1.951m9.345-8.334V6.637c0-1.621-1.152-3.026-2.76-3.235A48.455 48.455 0 0011.25 3c-2.115 0-4.198.137-6.24.402-1.608.209-2.76 1.614-2.76 3.235v6.226c0 1.621 1.152 3.026 2.76 3.235.577.075 1.157.14 1.74.194V21l4.155-4.155"/></svg>
-              ${post.comment_count || 0} Replies
-            </span>
+    if (commScroll) {
+      if (dashboard.my_communities.length === 0) {
+        commScroll.innerHTML = `
+          <div class="empty-state" style="padding: var(--space-8);">
+            <i data-lucide="users"></i>
+            <h3>No communities joined</h3>
+            <p>Join a community to start collaborating with your peers.</p>
+            <button class="btn btn-primary btn-sm" onclick="window.location.href='communities.html'">Browse Communities</button>
+          </div>`;
+        if (commNavSection) commNavSection.style.display = 'none';
+      } else {
+        commScroll.innerHTML = dashboard.my_communities.map(c => `
+          <div class="community-chip" onclick="window.location.href='community-detail.html?id=${c.id}'">
+            <span style="font-size: 1.2em;">${c.icon || '🎓'}</span>
+            <span>${esc(c.name)}</span>
           </div>
-        </div>
-      </div>
-    `;
-  }).join('');
-}
+        `).join('');
+        
+        if (commNavSection && commNavList) {
+          commNavSection.style.display = 'block';
+          commNavList.innerHTML = dashboard.my_communities.slice(0, 5).map(c => `
+            <a href="community-detail.html?id=${c.id}" class="sidebar-link" style="padding-left: var(--space-6);">
+              <span style="font-size: 1.1em; margin-right: var(--space-2);">${c.icon || '🎓'}</span>
+              <span style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${esc(c.name)}</span>
+            </a>
+          `).join('');
+        }
+      }
+    }
 
-function renderMyCommunities(communities) {
-  const container = document.getElementById('my-communities-container');
-  if (!container) return;
+    // Recent Discussions Feed
+    const feedContainer = document.getElementById('dashboard-feed');
+    if (feedContainer) {
+      if (dashboard.recent_discussions.length === 0) {
+        feedContainer.innerHTML = `
+          <div class="card empty-state">
+            <i data-lucide="message-square"></i>
+            <h3>No discussions yet</h3>
+            <p>Be the first to start a conversation in your communities or join a new one.</p>
+            <div class="flex-center gap-4 mt-4">
+              <button class="btn btn-primary" onclick="window.location.href='communities.html'">Browse Communities</button>
+              <button class="btn btn-outline" onclick="openCreatePostModal()">Create Post</button>
+            </div>
+          </div>`;
+      } else {
+        feedContainer.innerHTML = dashboard.recent_discussions.map(post => renderDiscussionCard(post)).join('');
+      }
+      initIcons();
+    }
 
-  if (!communities || communities.length === 0) {
-    container.innerHTML = '<p class="empty-state">No communities joined yet.</p>';
-    return;
-  }
+    // Right Rail: Upcoming Assignments
+    const assignList = document.getElementById('upcoming-assignments-list');
+    if (assignList) {
+      if (dashboard.upcoming_assignments.length === 0) {
+        assignList.innerHTML = '<p class="empty-state">No upcoming assignments.</p>';
+      } else {
+        assignList.innerHTML = dashboard.upcoming_assignments.map(a => renderAssignmentItem(a)).join('');
+      }
+    }
 
-  container.innerHTML = communities.map(c => `
-    <div class="community-mini-card" onclick="window.location.href='community-detail.html?id=${c.id}'">
-      <div class="comm-icon-small">${c.icon || '🎓'}</div>
-      <div class="comm-info-small">
-        <div class="comm-name-small">${esc(c.name)}</div>
-        <div class="comm-meta-small">${c.member_count} members</div>
-      </div>
-    </div>
-  `).join('');
-}
+    // Right Rail: Recent Resources
+    const resList = document.getElementById('recent-resources-list');
+    if (resList) {
+      if (dashboard.recent_resources.length === 0) {
+        resList.innerHTML = '<p class="empty-state">No recent resources.</p>';
+      } else {
+        resList.innerHTML = dashboard.recent_resources.map(r => renderResourceItem(r)).join('');
+      }
+    }
 
-function renderUpcomingAssignments(assignments) {
-  const container = document.getElementById('assignments-container');
-  if (!container) return;
+    // Right Rail: Announcements
+    const annList = document.getElementById('announcements-list');
+    if (annList) {
+      if (dashboard.announcements.length === 0) {
+        annList.innerHTML = '<p class="empty-state">No announcements.</p>';
+      } else {
+        annList.innerHTML = dashboard.announcements.map(a => `
+          <div class="card mb-2" style="padding: var(--space-3);">
+            <div class="flex-between mb-1">
+              <span class="tag ${a.pinned ? 'tag-orange' : 'tag-gray'}" style="font-size:10px;">${a.pinned ? 'PINNED' : 'PLATFORM'}</span>
+              <span style="font-size:10px; color:var(--color-text-subtle);">${formatTimeAgo(a.created_at)}</span>
+            </div>
+            <div style="font-size:13px; font-weight:var(--font-semibold);">${esc(a.title)}</div>
+          </div>
+        `).join('');
+      }
+    }
 
-  if (!assignments || assignments.length === 0) {
-    container.innerHTML = '<p class="empty-state">No upcoming assignments.</p>';
-    return;
-  }
-
-  container.innerHTML = assignments.map(a => `
-    <div class="assignment-item">
-      <div class="assign-date">
-        <span class="day">${new Date(a.due_date).getDate()}</span>
-        <span class="month">${new Date(a.due_date).toLocaleString('default', { month: 'short' })}</span>
-      </div>
-      <div class="assign-details">
-        <div class="assign-title">${esc(a.title)}</div>
-        <div class="assign-meta">Due ${new Date(a.due_date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
-      </div>
-    </div>
-  `).join('');
-}
-
-function renderRecentResources(resources) {
-  const container = document.getElementById('resources-container');
-  if (!container) return;
-
-  if (!resources || resources.length === 0) {
-    container.innerHTML = '<p class="empty-state">No recent resources.</p>';
-    return;
-  }
-
-  container.innerHTML = resources.map(r => `
-    <div class="resource-item" onclick="window.open('${api.resources.download(r.id)}', '_blank')">
-      <div class="res-icon">
-        <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
-      </div>
-      <div class="res-info">
-        <div class="res-name">${esc(r.title)}</div>
-        <div class="res-meta">${r.file_type.toUpperCase()} · ${(r.file_size / 1024).toFixed(1)} KB</div>
-      </div>
-    </div>
-  `).join('');
-}
-
-function renderAnnouncements(announcements) {
-  const container = document.getElementById('announcements-container');
-  if (!container) return;
-
-  if (!announcements || announcements.length === 0) {
-    container.innerHTML = '<p class="empty-state">No announcements.</p>';
-    return;
-  }
-
-  container.innerHTML = announcements.map(a => `
-    <div class="announcement-card ${a.pinned ? 'pinned' : ''}">
-      <div class="ann-header">
-        ${a.pinned ? '<span class="pin-badge"><svg width="10" height="10" fill="currentColor" viewBox="0 0 24 24"><path d="M16 5h.01M7 21l3-3h8V5H6v13l1 3z"/></svg> Pinned</span>' : ''}
-        <span class="ann-date">${formatTimeAgo(a.created_at)}</span>
-      </div>
-      <div class="ann-title">${esc(a.title)}</div>
-      <div class="ann-content">${esc(a.content)}</div>
-    </div>
-  `).join('');
-}
-
-function renderUnreadNotifications(count) {
-  const badge = document.getElementById('notif-badge');
-  if (!badge) return;
-  
-  if (count > 0) {
-    badge.textContent = count > 99 ? '99+' : count;
-    badge.style.display = 'flex';
-  } else {
-    badge.style.display = 'none';
+  } catch (err) {
+    console.error('Dashboard init failed:', err);
   }
 }
 
-// Community helpers
-function getRandomGradient() {
-  const gradients = [
-    'linear-gradient(135deg,#3B5BDB,#748FFC)',
-    'linear-gradient(135deg,#7950F2,#9B7FFF)',
-    'linear-gradient(135deg,#2F9E44,#51CF66)',
-    'linear-gradient(135deg,#E67700,#FFA94D)',
-    'linear-gradient(135deg,#C92A2A,#FF6B6B)',
-    'linear-gradient(135deg,#1971C2,#4DABF7)',
-    'linear-gradient(135deg,#495057,#868E96)',
-    'linear-gradient(135deg,#862E9C,#CC5DE8)',
-    'linear-gradient(135deg,#087F5B,#20C997)',
-  ];
-  return gradients[Math.floor(Math.random() * gradients.length)];
+// ── Search Logic ────────────────────────────────────────────────
+function initSearch() {
+  const searchInput = document.getElementById('global-search');
+  if (!searchInput) return;
+
+  searchInput.addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') {
+      window.location.href = `search.html?q=${encodeURIComponent(searchInput.value)}`;
+    }
+  });
 }
 
-function getRandomIcon() {
-  const icons = ['📚', '💻', '🎓', '🔬', '🌐', '📊', '🤖', '🎯', '✨'];
-  return icons[Math.floor(Math.random() * icons.length)];
+// ── Notifications Logic ──────────────────────────────────────────
+async function updateNotifBadge() {
+  try {
+    const data = await api.notifications.getUnreadCount();
+    const badge = document.getElementById('notif-badge');
+    if (badge) {
+      if (data.count > 0) {
+        badge.style.display = 'block';
+        badge.title = `${data.count} new notifications`;
+      } else {
+        badge.style.display = 'none';
+      }
+    }
+  } catch (err) {
+    console.error('Failed to update notif badge:', err);
+  }
 }
 
-function renderCommunityCard(community, isJoined = false) {
-  const gradient = getRandomGradient();
-  const icon = community.icon || getRandomIcon();
-  const bgColor = `#${Math.floor(Math.random()*16777215).toString(16).padStart(6, '0')}15`;
+// ── Shared Renderers ─────────────────────────────────────────────
+
+function renderDiscussionCard(post) {
+  const authorName = post.author ? (post.author.full_name || post.author.username) : 'Anonymous';
+  const initials = authorName[0].toUpperCase();
+  const communityLabel = post.community_name ? `<span class="tag tag-blue">${esc(post.community_name)}</span>` : '';
   
   return `
-    <div class="comm-card" onclick="window.location.href='community-detail.html?id=${community.id}'" style="cursor:pointer;">
-      <div class="comm-card-banner" style="background:${gradient}"></div>
-      <div class="comm-card-body">
-        <div class="comm-icon" style="background:${bgColor}">${icon}</div>
-        <div class="comm-name">${esc(community.name)}</div>
-        <div class="comm-desc">${esc(community.description || 'No description available')}</div>
-        <div class="comm-meta">
-          <div class="comm-stats">
-            <span class="comm-stat"><svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M18 18.72a9.094 9.094 0 003.741-.479 3 3 0 00-4.682-2.72"/></svg>${community.member_count || 0}</span>
-          </div>
-          ${isJoined ? '<span class="tag tag-blue">Joined</span>' : `<button class="btn btn-primary btn-sm" onclick="event.stopPropagation(); joinCommunity(${community.id}, this)">Join</button>`}
+    <article class="card discussion-card card-clickable" onclick="window.location.href='post-detail.html?id=${post.id}'">
+      <div class="meta" style="display: flex; align-items: center; gap: var(--space-2); font-size: var(--text-xs); color: var(--color-text-muted); margin-bottom: var(--space-3);">
+        <div class="topbar-avatar" style="width:24px; height:24px; font-size:10px;">${initials}</div>
+        <span style="font-weight: var(--font-medium); color: var(--color-text);">${esc(authorName)}</span>
+        <span>•</span>
+        <span>${formatTimeAgo(post.created_at)}</span>
+        <span style="margin-left: auto;">${communityLabel}</span>
+      </div>
+      <h2 style="font-size: var(--text-lg); font-weight: var(--font-bold); color: var(--color-text); margin-bottom: var(--space-2); line-height: var(--leading-tight);">${esc(post.title)}</h2>
+      <p class="preview" style="font-size: var(--text-sm); color: var(--color-text-muted); line-height: var(--leading-normal); display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;">${esc(post.content)}</p>
+      <div class="flex-between" style="margin-top: var(--space-4); padding-top: var(--space-3); border-top: 1px solid var(--color-border);">
+        <div style="display:flex; gap:var(--space-6);">
+          <span style="display:flex; align-items:center; gap:var(--space-1); font-size:var(--text-xs); color:var(--color-text-muted); cursor: pointer;" onclick="event.stopPropagation(); handleLike(${post.id})">
+            <i data-lucide="heart" style="width:16px; height:16px;"></i> <span>${post.like_count || 0}</span>
+          </span>
+          <span style="display:flex; align-items:center; gap:var(--space-1); font-size:var(--text-xs); color:var(--color-text-muted);">
+            <i data-lucide="message-square" style="width:16px; height:16px;"></i> <span>${post.comment_count || 0}</span>
+          </span>
         </div>
+        <button class="btn btn-ghost btn-sm" style="padding: 0; color: var(--color-primary-600);">Read More</button>
+      </div>
+    </article>
+  `;
+}
+
+function renderAssignmentItem(a) {
+  const dueDate = new Date(a.due_date);
+  const diffDays = Math.ceil((dueDate - new Date()) / (1000 * 60 * 60 * 24));
+  let urgentClass = '';
+  if (diffDays <= 3) urgentClass = 'soon';
+  if (diffDays <= 0) urgentClass = 'urgent';
+
+  return `
+    <div class="assignment-item">
+      <div class="due-date-badge ${urgentClass}">
+        <span class="due-day">${dueDate.getDate()}</span>
+        <span class="due-month">${dueDate.toLocaleString('default', { month: 'short' })}</span>
+      </div>
+      <div style="flex:1; min-width:0;">
+        <div style="font-size:13px; font-weight:var(--font-semibold); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${esc(a.title)}</div>
+        <div style="font-size:11px; color:var(--color-text-subtle);">${esc(a.community_name || 'Assignment')}</div>
       </div>
     </div>
   `;
 }
 
-function renderCommunities(containerId, communities, isJoined = false) {
-  const container = document.getElementById(containerId);
-  if (!container) return;
+function renderResourceItem(r) {
+  const typeIcons = {
+    pdf: 'file-text',
+    docx: 'file-text',
+    pptx: 'presentation',
+    xlsx: 'table',
+    png: 'image',
+    jpg: 'image'
+  };
+  const icon = typeIcons[r.file_type.toLowerCase()] || 'file';
   
-  if (!communities || communities.length === 0) {
-    container.innerHTML = '<p class="empty-state">No communities found</p>';
-    return;
-  }
-  
-  container.innerHTML = communities.map(c => renderCommunityCard(c, isJoined)).join('');
+  return `
+    <div class="card card-clickable mb-2" style="padding: var(--space-2) var(--space-3);" onclick="window.open('${api.resources.download(r.id)}', '_blank')">
+      <div style="display:flex; align-items:center; gap:var(--space-3);">
+        <i data-lucide="${icon}" style="width:18px; height:18px; color:var(--color-primary-500);"></i>
+        <div style="flex:1; min-width:0;">
+          <div style="font-size:13px; font-weight:var(--font-medium); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${esc(r.title)}</div>
+          <div style="font-size:10px; color:var(--color-text-subtle);">${r.file_type.toUpperCase()} • ${(r.file_size / 1024).toFixed(1)} KB</div>
+        </div>
+        <i data-lucide="download" style="width:14px; height:14px; color:var(--color-text-subtle);"></i>
+      </div>
+    </div>
+  `;
 }
 
 // ── Utils ───────────────────────────────────────────────────────
-
 function esc(str) {
   if (!str) return '';
   const div = document.createElement('div');
@@ -301,22 +292,18 @@ function formatTimeAgo(dateStr) {
 }
 
 // ── Auth Handlers ────────────────────────────────────────────────
-
 async function handleLogin() {
   const email = document.getElementById('l-email').value;
   const password = document.getElementById('l-password').value;
   const errorEl = document.getElementById('login-error');
   const btn = document.getElementById('login-btn');
 
-  if (!email || !password) {
-    showError(errorEl, 'Please fill in all fields');
-    return;
-  }
-
   try {
     setLoading(btn, true);
     const data = await api.auth.login(email, password);
     localStorage.setItem('token', data.access_token);
+    const user = await api.users.me();
+    localStorage.setItem('currentUser', JSON.stringify(user));
     window.location.href = 'dashboard.html';
   } catch (err) {
     showError(errorEl, err.message);
@@ -326,28 +313,19 @@ async function handleLogin() {
 }
 
 async function handleRegister() {
-  const username = document.getElementById('r-username').value;
-  const email = document.getElementById('r-email').value;
-  const password = document.getElementById('r-password').value;
+  const form = document.getElementById('register-form');
+  const formData = new FormData(form);
+  const data = Object.fromEntries(formData.entries());
   const errorEl = document.getElementById('register-error');
   const btn = document.getElementById('register-btn');
 
-  if (!username || !email || !password) {
-    showError(errorEl, 'Please fill in all fields');
-    return;
-  }
-
   try {
     setLoading(btn, true);
-    await api.auth.register({
-      email,
-      username,
-      password
-    });
-    
-    // Auto login after registration
-    const loginData = await api.auth.login(username, password);
+    await api.auth.register(data);
+    const loginData = await api.auth.login(data.username, data.password);
     localStorage.setItem('token', loginData.access_token);
+    const user = await api.users.me();
+    localStorage.setItem('currentUser', JSON.stringify(user));
     window.location.href = 'dashboard.html';
   } catch (err) {
     showError(errorEl, err.message);
@@ -356,44 +334,330 @@ async function handleRegister() {
   }
 }
 
-function handleLogout() {
-  localStorage.removeItem('token');
-  window.location.href = 'index.html';
-}
-
-// ── UI Helpers ──────────────────────────────────────────────────
-
 function showError(el, msg) {
+  if (!el) return alert(msg);
   el.textContent = msg;
   el.style.display = 'block';
-  setTimeout(() => {
-    el.style.display = 'none';
-  }, 5000);
+  setTimeout(() => el.style.display = 'none', 5000);
+}
+
+// ── Actions ─────────────────────────────────────────────────────
+async function handleLike(postId) {
+  try {
+    await api.likes.like(postId);
+    // Refresh current view if possible
+    if (typeof loadPostDetail === 'function') loadPostDetail();
+    else if (typeof initDashboard === 'function') initDashboard();
+  } catch (err) { console.error('Like failed:', err); }
+}
+
+async function openCreatePostModal() {
+  const communities = await api.communities.getMy();
+  
+  const modalHtml = `
+    <div class="modal-overlay open" id="create-post-modal">
+      <div class="modal-container">
+        <div class="modal-header">
+          <h2>Create New Discussion</h2>
+          <i data-lucide="x" class="modal-close" onclick="closeModal('create-post-modal')"></i>
+        </div>
+        <form id="create-post-form" onsubmit="event.preventDefault(); handleCreatePost();">
+          <div class="form-group">
+            <label class="form-label">Community</label>
+            <select name="community_id" class="form-control" required>
+              <option value="">Select a community...</option>
+              ${communities.map(c => `<option value="${c.id}">${c.name}</option>`).join('')}
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Title</label>
+            <input type="text" name="title" class="form-control" placeholder="What's on your mind?" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Content</label>
+            <textarea name="content" class="form-control" rows="5" placeholder="Share your thoughts..." required></textarea>
+          </div>
+          <div class="flex-center mt-4">
+            <button type="submit" class="btn btn-primary btn-full" id="create-post-btn">Post Discussion</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  `;
+  
+  document.body.insertAdjacentHTML('beforeend', modalHtml);
+  initIcons();
+}
+
+async function handleCreatePost() {
+  const form = document.getElementById('create-post-form');
+  const btn = document.getElementById('create-post-btn');
+  const formData = new FormData(form);
+  const data = Object.fromEntries(formData.entries());
+  
+  try {
+    setLoading(btn, true);
+    await api.posts.create(data);
+    closeModal('create-post-modal');
+    if (typeof initDashboard === 'function') initDashboard();
+    // Show success message if possible
+  } catch (err) {
+    alert(err.message);
+  } finally {
+    setLoading(btn, false);
+  }
+}
+
+function closeModal(id) {
+  const modal = document.getElementById(id);
+  if (modal) modal.remove();
+}
+
+async function openUploadResourceModal() {
+  const communities = await api.communities.getMy();
+  
+  const modalHtml = `
+    <div class="modal-overlay open" id="upload-resource-modal">
+      <div class="modal-container">
+        <div class="modal-header">
+          <h2>Upload Resource</h2>
+          <i data-lucide="x" class="modal-close" onclick="closeModal('upload-resource-modal')"></i>
+        </div>
+        <form id="upload-resource-form" onsubmit="event.preventDefault(); handleUploadResource();">
+          <div class="form-group">
+            <label class="form-label">Community</label>
+            <select name="community_id" class="form-control" required>
+              <option value="">Select a community...</option>
+              ${communities.map(c => `<option value="${c.id}">${c.name}</option>`).join('')}
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Title</label>
+            <input type="text" name="title" class="form-control" placeholder="e.g. Lecture 1 Notes" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">File</label>
+            <input type="file" name="file" class="form-control" required>
+          </div>
+          <div class="flex-center mt-4">
+            <button type="submit" class="btn btn-primary btn-full" id="upload-resource-btn">Upload File</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  `;
+  
+  document.body.insertAdjacentHTML('beforeend', modalHtml);
+  initIcons();
+}
+
+async function handleUploadResource() {
+  const form = document.getElementById('upload-resource-form');
+  const btn = document.getElementById('upload-resource-btn');
+  const formData = new FormData(form);
+  
+  try {
+    setLoading(btn, true);
+    await api.resources.create(formData);
+    closeModal('upload-resource-modal');
+    if (window.location.pathname.endsWith('resources.html')) {
+        // Refresh resources if on the resources page
+        if (typeof loadResources === 'function') loadResources();
+    } else if (typeof initDashboard === 'function') {
+        initDashboard();
+    }
+  } catch (err) {
+    alert(err.message);
+  } finally {
+    setLoading(btn, false);
+  }
+}
+
+async function openCreateCommunityModal() {
+  const modalHtml = `
+    <div class="modal-overlay open" id="create-community-modal">
+      <div class="modal-container">
+        <div class="modal-header">
+          <h2>Create New Community</h2>
+          <i data-lucide="x" class="modal-close" onclick="closeModal('create-community-modal')"></i>
+        </div>
+        <form id="create-community-form" onsubmit="event.preventDefault(); handleCreateCommunity();">
+          <div class="form-group">
+            <label class="form-label">Name</label>
+            <input type="text" name="name" class="form-control" placeholder="e.g. Computer Science 101" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Description</label>
+            <textarea name="description" class="form-control" rows="3" placeholder="What is this community about?"></textarea>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Icon (Emoji)</label>
+            <input type="text" name="icon" class="form-control" placeholder="🎓">
+          </div>
+          <div class="flex-center mt-4">
+            <button type="submit" class="btn btn-primary btn-full" id="create-community-btn">Create Community</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  `;
+  
+  document.body.insertAdjacentHTML('beforeend', modalHtml);
+  initIcons();
+}
+
+async function handleCreateCommunity() {
+  const form = document.getElementById('create-community-form');
+  const btn = document.getElementById('create-community-btn');
+  const formData = new FormData(form);
+  const data = Object.fromEntries(formData.entries());
+  
+  try {
+    setLoading(btn, true);
+    await api.communities.create(data);
+    closeModal('create-community-modal');
+    if (window.location.pathname.endsWith('communities.html')) {
+        if (typeof loadCommunities === 'function') loadCommunities();
+    } else if (typeof initDashboard === 'function') {
+        initDashboard();
+    }
+  } catch (err) {
+    alert(err.message);
+  } finally {
+    setLoading(btn, false);
+  }
+}
+
+async function openCreateGroupModal() {
+  const communities = await api.communities.getMy();
+  
+  const modalHtml = `
+    <div class="modal-overlay open" id="create-group-modal">
+      <div class="modal-container">
+        <div class="modal-header">
+          <h2>Create Project Group</h2>
+          <i data-lucide="x" class="modal-close" onclick="closeModal('create-group-modal')"></i>
+        </div>
+        <form id="create-group-form" onsubmit="event.preventDefault(); handleCreateGroup();">
+          <div class="form-group">
+            <label class="form-label">Parent Community</label>
+            <select name="community_id" class="form-control" required>
+              <option value="">Select a community...</option>
+              ${communities.map(c => `<option value="${c.id}">${c.name}</option>`).join('')}
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Group Name</label>
+            <input type="text" name="name" class="form-control" placeholder="e.g. Final Year Project Team A" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Description</label>
+            <textarea name="description" class="form-control" rows="3" placeholder="What is this group working on?"></textarea>
+          </div>
+          <div class="flex-center mt-4">
+            <button type="submit" class="btn btn-primary btn-full" id="create-group-btn">Create Group</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  `;
+  
+  document.body.insertAdjacentHTML('beforeend', modalHtml);
+  initIcons();
+}
+
+async function handleCreateGroup() {
+  const form = document.getElementById('create-group-form');
+  const btn = document.getElementById('create-group-btn');
+  const formData = new FormData(form);
+  const data = Object.fromEntries(formData.entries());
+  
+  try {
+    setLoading(btn, true);
+    await api.projectGroups.create(data);
+    closeModal('create-group-modal');
+    if (window.location.pathname.endsWith('project-groups.html')) {
+        if (typeof loadGroups === 'function') loadGroups();
+    } else if (typeof initDashboard === 'function') {
+        initDashboard();
+    }
+  } catch (err) {
+    alert(err.message);
+  } finally {
+    setLoading(btn, false);
+  }
+}
+
+async function openAssignmentDetail(id) {
+  try {
+    const a = await api.assignments.get(id);
+    const dueDate = new Date(a.due_date);
+    
+    const modalHtml = `
+      <div class="modal-overlay open" id="assignment-detail-modal">
+        <div class="modal-container">
+          <div class="modal-header">
+            <h2>Assignment Detail</h2>
+            <i data-lucide="x" class="modal-close" onclick="closeModal('assignment-detail-modal')"></i>
+          </div>
+          <div style="margin-bottom: var(--space-6);">
+            <h3 style="font-size: var(--text-lg); margin-bottom: var(--space-2);">${esc(a.title)}</h3>
+            <div class="tag tag-blue mb-4">${esc(a.community_name || 'General')}</div>
+            <p style="color: var(--color-text-muted); line-height: var(--leading-normal); margin-bottom: var(--space-4);">
+              ${esc(a.description || 'No description provided.')}
+            </p>
+            <div class="flex-between" style="background: var(--color-surface-2); padding: var(--space-4); border-radius: var(--radius-md);">
+              <div>
+                <div style="font-size: var(--text-xs); color: var(--color-text-muted); text-transform: uppercase;">Due Date</div>
+                <div style="font-weight: var(--font-bold);">${dueDate.toLocaleDateString()} ${dueDate.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</div>
+              </div>
+              <div>
+                <div style="font-size: var(--text-xs); color: var(--color-text-muted); text-transform: uppercase;">Status</div>
+                <div style="font-weight: var(--font-bold); color: ${a.completed ? 'var(--color-success-500)' : 'var(--color-danger-500)'};">
+                  ${a.completed ? 'Completed' : 'Pending'}
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="flex-center gap-4">
+            ${!a.completed ? `<button class="btn btn-primary btn-full" onclick="handleMarkDone(${a.id}); closeModal('assignment-detail-modal');">Mark as Done</button>` : ''}
+            <button class="btn btn-outline btn-full" onclick="closeModal('assignment-detail-modal')">Close</button>
+          </div>
+        </div>
+      </div>
+    `;
+    
+    document.body.insertAdjacentHTML('beforeend', modalHtml);
+    initIcons();
+  } catch (err) {
+    alert(err.message);
+  }
+}
+
+async function handleMarkDone(id) {
+  try {
+    await api.assignments.update(id, { completed: true });
+    if (typeof loadAssignments === 'function') loadAssignments();
+  } catch (err) { alert(err.message); }
 }
 
 function setLoading(btn, isLoading) {
   if (isLoading) {
     btn.disabled = true;
-    btn.dataset.oldText = btn.textContent;
-    btn.textContent = 'Processing...';
+    btn.dataset.oldText = btn.innerHTML;
+    btn.innerHTML = '<span class="spinner" style="display:inline-block; width:12px; height:12px; border:2px solid white; border-top-color:transparent; border-radius:50%; animation: spin 1s linear infinite; margin-right:8px;"></span>...';
   } else {
     btn.disabled = false;
-    btn.textContent = btn.dataset.oldText || 'Submit';
+    btn.innerHTML = btn.dataset.oldText || 'Submit';
   }
 }
 
-// ── Shared Page Logic ───────────────────────────────────────────
+// Add spin animation to styles
+const style = document.createElement('style');
+style.textContent = '@keyframes spin { to { transform: rotate(360deg); } }';
+document.head.appendChild(style);
 
-function updateSidebarUser(user) {
-  const avatarEl = document.querySelector('.sidebar-footer .topbar-avatar');
-  const nameEl = document.querySelector('.sidebar-footer .name'); // This class might be missing in current nav.js, let's fix it later if needed
-  const roleEl = document.querySelector('.sidebar-footer .role');
-
-  if (avatarEl) avatarEl.textContent = user.full_name ? user.full_name.split(' ').map(n => n[0]).join('').toUpperCase() : user.username[0].toUpperCase();
-  // We'll need to update nav.js to have better selectors for these
-}
-
-// Run init on load
+// ── Global Initializer ────────────────────────────────────────────
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', initApp);
 } else {

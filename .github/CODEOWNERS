@@ -1,0 +1,16 @@
+# Default owners for everything
+*                           @group-lead-username
+
+# Auth files — always reviewed by the auth specialist
+app/auth.py                 @member2-username
+app/routers/auth.py         @member2-username
+
+# Database models — reviewed by the DB lead
+app/models/                 @member1-username
+migrations/                 @member1-username
+
+# Frontend — reviewed by the frontend developer
+UniHub/                     @member4-username
+
+# This workflow file — only Group Lead can approve changes
+UniHub/contribution.md      @group-lead-username

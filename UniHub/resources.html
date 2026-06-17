@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Resources | UniHub</title>
+  <link rel="stylesheet" href="styles.css">
+  <link rel="icon" type="image/png" href="logo/unihub.png">
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script src="js/api.js" defer></script>
+  <script src="nav.js" defer></script>
+  <script src="js/app.js" defer></script>
+  <style>
+    .resource-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: var(--space-6);
+    }
+    .resource-card {
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+    }
+    .resource-icon-box {
+      width: 48px; height: 48px; border-radius: var(--radius-md);
+      display: flex; align-items: center; justify-content: center;
+      background: var(--color-primary-50); color: var(--color-primary-600);
+      margin-bottom: var(--space-4);
+    }
+    .resource-title { font-size: var(--text-base); font-weight: var(--font-bold); margin-bottom: var(--space-1); }
+    .resource-meta { font-size: var(--text-xs); color: var(--color-text-muted); margin-bottom: var(--space-4); }
+  </style>
+</head>
+<body>
+  <div id="nav-mount"></div>
+
+  <div class="app-shell">
+    <main class="main">
+      <div class="page-content">
+        <div class="page-header">
+          <div>
+            <h1>Resources</h1>
+            <p>Access shared notes, past papers, and lecture materials</p>
+          </div>
+          <div class="flex-center gap-4">
+            <div class="topbar-search" style="display:block; max-width: 300px; margin:0;">
+              <i data-lucide="search" class="search-icon" style="width:16px; height:16px;"></i>
+              <input type="text" placeholder="Search resources..." id="resource-search" oninput="filterResources()">
+            </div>
+            <button class="btn btn-primary" onclick="openUploadResourceModal()">
+              <i data-lucide="upload"></i> Upload
+            </button>
+          </div>
+        </div>
+
+        <div class="tabs mb-8">
+          <button class="tab-btn active" onclick="switchResourceType('all', this)">All</button>
+          <button class="tab-btn" onclick="switchResourceType('PDF', this)">PDFs</button>
+          <button class="tab-btn" onclick="switchResourceType('DOCX', this)">Docs</button>
+          <button class="tab-btn" onclick="switchResourceType('PPTX', this)">Slides</button>
+        </div>
+
+        <div class="resource-grid" id="resources-list">
+          <!-- Skeletons -->
+          <div class="card skeleton" style="height: 180px;"></div>
+          <div class="card skeleton" style="height: 180px;"></div>
+          <div class="card skeleton" style="height: 180px;"></div>
+          <div class="card skeleton" style="height: 180px;"></div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    let allResources = [];
+    let currentFilter = 'all';
+
+    async function loadResources() {
+      const list = document.getElementById('resources-list');
+      try {
+        allResources = await api.resources.getAll();
+        renderResources(allResources);
+      } catch (err) {
+        list.innerHTML = `<div class="card empty-state" style="grid-column:1/-1;">
+          <i data-lucide="alert-circle"></i>
+          <h3>Failed to load resources</h3>
+          <p>${err.message}</p>
+          <button class="btn btn-primary mt-4" onclick="loadResources()">Retry</button>
+        </div>`;
+        initIcons();
+      }
+    }
+
+    function renderResources(items) {
+      const list = document.getElementById('resources-list');
+      if (items.length === 0) {
+        list.innerHTML = `
+          <div class="card empty-state" style="grid-column: 1/-1;">
+            <i data-lucide="folder-open"></i>
+            <h3>No resources found</h3>
+            <p>Upload the first resource to help your peers!</p>
+            <button class="btn btn-primary mt-4" onclick="openUploadResourceModal()">Upload Resource</button>
+          </div>`;
+        initIcons();
+        return;
+      }
+
+      list.innerHTML = items.map(r => renderResourceCardLarge(r)).join('');
+      initIcons();
+    }
+
+    function renderResourceCardLarge(r) {
+      const typeIcons = {
+        PDF: 'file-text',
+        DOCX: 'file-text',
+        PPTX: 'presentation',
+        XLSX: 'table',
+        PNG: 'image',
+        JPG: 'image'
+      };
+      const icon = typeIcons[r.file_type.toUpperCase()] || 'file';
+
+      return `
+        <div class="card resource-card card-clickable" onclick="window.open('${api.resources.download(r.id)}', '_blank')">
+          <div class="resource-icon-box">
+            <i data-lucide="${icon}"></i>
+          </div>
+          <div style="flex:1;">
+            <h3 class="resource-title">${esc(r.title)}</h3>
+            <div class="resource-meta">
+              ${r.file_type.toUpperCase()} • ${(r.file_size / 1024).toFixed(1)} KB • Shared by ${esc(r.owner_name || 'Peer')}
+            </div>
+            <div class="tag tag-blue" style="font-size: 10px;">${esc(r.community_name || 'General')}</div>
+          </div>
+          <div class="flex-between mt-4" style="padding-top: var(--space-3); border-top: 1px solid var(--color-border);">
+            <span style="font-size: var(--text-xs); color: var(--color-text-subtle);">${formatTimeAgo(r.created_at)}</span>
+            <i data-lucide="download" style="width:16px; height:16px; color: var(--color-text-muted);"></i>
+          </div>
+        </div>
+      `;
+    }
+
+    function filterResources() {
+      const query = document.getElementById('resource-search').value.toLowerCase();
+      const filtered = allResources.filter(r => {
+        const matchesQuery = r.title.toLowerCase().includes(query);
+        const matchesType = currentFilter === 'all' || r.file_type.toUpperCase() === currentFilter;
+        return matchesQuery && matchesType;
+      });
+      renderResources(filtered);
+    }
+
+    function switchResourceType(type, btn) {
+      currentFilter = type;
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      filterResources();
+    }
+
+    document.addEventListener('DOMContentLoaded', async () => {
+      const user = JSON.parse(localStorage.getItem('currentUser'));
+      document.getElementById('nav-mount').outerHTML = renderNav('resources', user);
+      initIcons();
+      loadResources();
+    });
+  </script>
+</body>
+</html>

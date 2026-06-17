@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Search Results | UniHub</title>
+  <link rel="stylesheet" href="styles.css">
+  <link rel="icon" type="image/png" href="logo/unihub.png">
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script src="js/api.js" defer></script>
+  <script src="nav.js" defer></script>
+  <script src="js/app.js" defer></script>
+</head>
+<body>
+  <div id="nav-mount"></div>
+
+  <div class="app-shell">
+    <main class="main">
+      <div class="page-content">
+        <div class="page-header">
+          <div>
+            <h1>Search Results</h1>
+            <p id="search-query-text">Showing results for "..."</p>
+          </div>
+        </div>
+
+        <div class="tabs mb-8">
+          <button class="tab-btn active" onclick="switchSearchTab('posts', this)">Discussions</button>
+          <button class="tab-btn" onclick="switchSearchTab('communities', this)">Communities</button>
+          <button class="tab-btn" onclick="switchSearchTab('users', this)">People</button>
+        </div>
+
+        <div id="search-results-list">
+          <!-- Skeletons -->
+          <div class="card skeleton mb-4" style="height: 120px;"></div>
+          <div class="card skeleton mb-4" style="height: 120px;"></div>
+          <div class="card skeleton mb-4" style="height: 120px;"></div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    let currentQuery = new URLSearchParams(window.location.search).get('q') || '';
+    let activeTab = 'posts';
+
+    async function performSearch() {
+      const list = document.getElementById('search-results-list');
+      document.getElementById('search-query-text').textContent = `Showing results for "${currentQuery}"`;
+      
+      try {
+        let results = [];
+        if (activeTab === 'posts') {
+          results = await api.search.posts(currentQuery);
+          if (results.length === 0) {
+            list.innerHTML = renderEmptyState('message-square', 'No discussions found', `We couldn't find any posts matching "${currentQuery}"`);
+          } else {
+            list.innerHTML = results.map(p => renderDiscussionCard(p)).join('');
+          }
+        } else if (activeTab === 'communities') {
+          results = await api.search.communities(currentQuery);
+          if (results.length === 0) {
+            list.innerHTML = renderEmptyState('users', 'No communities found', `We couldn't find any communities matching "${currentQuery}"`);
+          } else {
+            list.innerHTML = `<div class="grid-3">${results.map(c => renderCommunityCard(c)).join('')}</div>`;
+          }
+        } else if (activeTab === 'users') {
+          results = await api.search.users(currentQuery);
+          if (results.length === 0) {
+            list.innerHTML = renderEmptyState('user', 'No people found', `We couldn't find any users matching "${currentQuery}"`);
+          } else {
+            list.innerHTML = `<div class="grid-3">${results.map(u => renderUserCard(u)).join('')}</div>`;
+          }
+        }
+        initIcons();
+      } catch (err) {
+        list.innerHTML = `<p class="error-msg">Search failed: ${err.message}</p>`;
+      }
+    }
+
+    function renderCommunityCard(c) {
+      return `
+        <div class="card card-clickable" onclick="window.location.href='community-detail.html?id=${c.id}'">
+          <div class="flex-center mb-4" style="font-size: 32px; background: var(--color-primary-50); height: 64px; border-radius: var(--radius-md);">
+            ${c.icon || '🎓'}
+          </div>
+          <h3 style="font-size: var(--text-base); font-weight: var(--font-bold); margin-bottom: var(--space-1);">${esc(c.name)}</h3>
+          <p style="font-size: var(--text-xs); color: var(--color-text-muted); line-height: var(--leading-normal); margin-bottom: var(--space-4);">${esc(c.description || 'No description')}</p>
+          <div class="flex-between">
+            <span style="font-size: 11px; color: var(--color-text-subtle);">${c.member_count || 0} members</span>
+            <button class="btn btn-primary btn-sm">Join</button>
+          </div>
+        </div>
+      `;
+    }
+
+    function renderUserCard(u) {
+      const initials = (u.full_name || u.username)[0].toUpperCase();
+      return `
+        <div class="card card-clickable" onclick="window.location.href='profile.html?id=${u.id}'">
+          <div style="display: flex; align-items: center; gap: var(--space-4);">
+            <div class="topbar-avatar" style="width: 48px; height: 48px; font-size: 18px;">${initials}</div>
+            <div style="flex: 1; min-width: 0;">
+              <h3 style="font-size: var(--text-sm); font-weight: var(--font-bold); margin-bottom: 0;">${esc(u.full_name || u.username)}</h3>
+              <p style="font-size: var(--text-xs); color: var(--color-text-muted);">@${esc(u.username)}</p>
+            </div>
+          </div>
+          <div style="margin-top: var(--space-4); font-size: 11px; color: var(--color-text-subtle);">
+            ${esc(u.department || 'Student')} • ${esc(u.academic_year || 'UniHub Member')}
+          </div>
+        </div>
+      `;
+    }
+
+    function renderEmptyState(icon, title, text) {
+      return `
+        <div class="card empty-state">
+          <i data-lucide="${icon}"></i>
+          <h3>${title}</h3>
+          <p>${text}</p>
+        </div>`;
+    }
+
+    function switchSearchTab(tab, btn) {
+      activeTab = tab;
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      performSearch();
+    }
+
+    document.addEventListener('DOMContentLoaded', async () => {
+      const user = JSON.parse(localStorage.getItem('currentUser'));
+      document.getElementById('nav-mount').outerHTML = renderNav('search', user);
+      initIcons();
+      performSearch();
+    });
+  </script>
+</body>
+</html>

@@ -1,42 +1,82 @@
-
 function renderNav(activePage, user = null) {
-  const pages = [
-    { id: 'dashboard', label: 'Dashboard', href: 'dashboard.html', icon: `<svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>` },
-    { id: 'profile', label: 'My Profile', href: 'profile.html', icon: `<svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z"/></svg>` },
+  const primaryPages = [
+    { id: 'dashboard', label: 'Dashboard', href: 'dashboard.html', icon: 'layout' },
+    { id: 'communities', label: 'Communities', href: 'communities.html', icon: 'users' },
+    { id: 'resources', label: 'Resources', href: 'resources.html', icon: 'folder' },
+    { id: 'assignments', label: 'Assignments', href: 'assignments.html', icon: 'clipboard' },
+    { id: 'project-groups', label: 'Project Groups', href: 'project-groups.html', icon: 'layers' },
   ];
 
-  const displayName = user ? user.username : 'Guest User';
-  const displayRole = user ? (user.bio || 'UniHub Member') : 'Sign in to join';
-  const initials = user ? user.username[0].toUpperCase() : '?';
+  const displayName = user ? (user.full_name || user.username) : 'Guest User';
+  const initials = user ? (user.full_name || user.username)[0].toUpperCase() : '?';
 
   return `
-  <aside class="sidebar">
-    <div class="sidebar-brand">
-      <div class="logo-mark">U</div>
-      <span class="logo-text">UniHub</span>
+  <nav class="topbar">
+    <div class="topbar-left">
+      <a href="dashboard.html" class="topbar-logo">
+        <img src="logo/unihub.png" alt="U" class="logo-mark" style="object-fit: cover;">
+        <span class="logo-text">UniHub</span>
+      </a>
+    </div>
+    
+    <div class="topbar-search">
+      <i data-lucide="search" class="search-icon" style="width:18px; height:18px;"></i>
+      <input type="text" placeholder="Search communities, posts, people..." id="global-search">
     </div>
 
+    <div class="topbar-actions">
+      <button class="icon-btn" id="theme-toggle" title="Toggle Theme">
+        <i data-lucide="sun" style="width:20px; height:20px;"></i>
+      </button>
+      <button class="icon-btn" id="notif-btn" title="Notifications">
+        <i data-lucide="bell" style="width:20px; height:20px;"></i>
+        <span class="badge" id="notif-badge" style="display:none; position:absolute; top:8px; right:8px; width:8px; height:8px; background:var(--color-danger-500); border-radius:50%; border:2px solid var(--color-surface);"></span>
+      </button>
+      <div class="topbar-avatar" onclick="window.location.href='profile.html'" title="View Profile">${initials}</div>
+    </div>
+  </nav>
+
+  <aside class="sidebar">
     <div class="sidebar-nav">
-      ${pages.map(p => `
+      ${primaryPages.map(p => `
         <a href="${p.href}" class="sidebar-link ${p.id === activePage ? 'active' : ''}">
-          <span>${p.icon}</span>
-          ${p.label}
-          ${p.badge ? `<span class="badge">${p.badge}</span>` : ''}
+          <i data-lucide="${p.icon}" style="width:18px; height:18px;"></i>
+          <span>${p.label}</span>
         </a>
       `).join('')}
+      
+      <div id="my-communities-section" style="display:none;">
+        <div class="sidebar-section-label">My Communities</div>
+        <div id="my-communities-nav-list"></div>
+      </div>
     </div>
 
     <div class="sidebar-footer">
-      <div style="display:flex;align-items:center;gap:12px;padding:10px 14px;">
-        <div class="topbar-avatar" style="width:36px;height:36px;font-size:13px;">${initials}</div>
-        <div style="flex:1;min-width:0;">
-          <div class="name" style="font-size:14px;font-weight:600;color:#fff;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${displayName}</div>
-          <div class="role" style="font-size:12px;color:rgba(255,255,255,0.6);">${displayRole}</div>
-        </div>
-        <button onclick="handleLogout()" style="background:none;border:none;color:rgba(255,255,255,0.4);cursor:pointer;" title="Logout">
-          <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15M12 9l-3 3m0 0l3 3m-3-3h12.75"/></svg>
-        </button>
-      </div>
+      <a href="profile.html" class="sidebar-link ${activePage === 'profile' ? 'active' : ''}">
+        <i data-lucide="user" style="width:18px; height:18px;"></i>
+        <span>My Profile</span>
+      </a>
+      <a href="settings.html" class="sidebar-link ${activePage === 'settings' ? 'active' : ''}">
+        <i data-lucide="settings" style="width:18px; height:18px;"></i>
+        <span>Settings</span>
+      </a>
+      <button onclick="handleLogout()" class="sidebar-link" style="width:100%; border:none; background:none; cursor:pointer; font-family:inherit;">
+        <i data-lucide="log-out" style="width:18px; height:18px;"></i>
+        <span>Logout</span>
+      </button>
     </div>
   </aside>`;
+}
+
+function handleLogout() {
+  localStorage.removeItem('token');
+  localStorage.removeItem('currentUser');
+  window.location.href = 'index.html';
+}
+
+// Initialize Lucide icons after navigation is rendered
+function initIcons() {
+  if (window.lucide) {
+    lucide.createIcons();
+  }
 }

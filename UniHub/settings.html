@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Settings | UniHub</title>
+  <link rel="stylesheet" href="styles.css">
+  <link rel="icon" type="image/png" href="logo/unihub.png">
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script src="js/api.js" defer></script>
+  <script src="nav.js" defer></script>
+  <script src="js/app.js" defer></script>
+</head>
+<body>
+  <div id="nav-mount"></div>
+
+  <div class="app-shell">
+    <main class="main">
+      <div class="page-content">
+        <div class="page-header">
+          <div>
+            <h1>Settings</h1>
+            <p>Manage your account and profile preferences</p>
+          </div>
+        </div>
+
+        <div class="grid-dash">
+          <div class="settings-main">
+            <div class="card mb-8">
+              <h2 style="font-size:var(--text-lg); font-weight:var(--font-bold); margin-bottom:var(--space-6);">Public Profile</h2>
+              <form id="profile-settings-form" onsubmit="handleUpdateProfile(event)">
+                <div class="grid-2">
+                  <div class="form-group">
+                    <label class="form-label">Full Name</label>
+                    <input type="text" name="full_name" id="s-full-name" class="form-control" placeholder="John Doe">
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label">Username</label>
+                    <input type="text" id="s-username" class="form-control" disabled>
+                    <p style="font-size:10px; color:var(--color-text-subtle); margin-top:4px;">Username cannot be changed.</p>
+                  </div>
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Bio</label>
+                  <textarea name="bio" id="s-bio" class="form-control" placeholder="Tell us about yourself..."></textarea>
+                </div>
+                <button type="submit" class="btn btn-primary" id="save-profile-btn">Save Changes</button>
+              </form>
+            </div>
+
+            <div class="card mb-8">
+              <h2 style="font-size:var(--text-lg); font-weight:var(--font-bold); margin-bottom:var(--space-6);">Academic Information</h2>
+              <form id="academic-settings-form" onsubmit="handleUpdateAcademic(event)">
+                <div class="grid-2">
+                  <div class="form-group">
+                    <label class="form-label">Department</label>
+                    <input type="text" name="department" id="s-dept" class="form-control" placeholder="Computer Science">
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label">Academic Year</label>
+                    <select name="academic_year" id="s-year" class="form-control">
+                      <option value="Year 1">Year 1</option>
+                      <option value="Year 2">Year 2</option>
+                      <option value="Year 3">Year 3</option>
+                      <option value="Year 4">Year 4</option>
+                      <option value="Year 5">Year 5</option>
+                      <option value="Graduate">Graduate</option>
+                    </select>
+                  </div>
+                </div>
+                <button type="submit" class="btn btn-primary" id="save-academic-btn">Update Academic Info</button>
+              </form>
+            </div>
+          </div>
+
+          <aside class="settings-sidebar">
+            <div class="card mb-6">
+              <h3 class="rail-section h3" style="font-size: var(--text-xs); font-weight: var(--font-bold); text-transform: uppercase; color: var(--color-text-subtle); margin-bottom: var(--space-4);">Quick Links</h3>
+              <div style="display:flex; flex-direction:column; gap:var(--space-2);">
+                <a href="profile.html" class="sidebar-link"><i data-lucide="user"></i> View Profile</a>
+                <a href="#" class="sidebar-link"><i data-lucide="shield"></i> Security</a>
+                <a href="#" class="sidebar-link"><i data-lucide="bell"></i> Notifications</a>
+              </div>
+            </div>
+            
+            <button class="btn btn-danger btn-full" onclick="handleLogout()">
+              <i data-lucide="log-out"></i> Log Out
+            </button>
+          </aside>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    async function loadSettings() {
+      try {
+        const user = await api.users.me();
+        document.getElementById('s-full-name').value = user.full_name || '';
+        document.getElementById('s-username').value = user.username || '';
+        document.getElementById('s-bio').value = user.bio || '';
+        document.getElementById('s-dept').value = user.department || '';
+        document.getElementById('s-year').value = user.academic_year || 'Year 1';
+      } catch (err) {
+        console.error('Failed to load settings:', err);
+      }
+    }
+
+    async function handleUpdateProfile(e) {
+      e.preventDefault();
+      const btn = document.getElementById('save-profile-btn');
+      const formData = new FormData(e.target);
+      const data = Object.fromEntries(formData.entries());
+      try {
+        setLoading(btn, true);
+        await api.users.updateMe(data);
+        alert('Profile updated successfully!');
+      } catch (err) {
+        alert(err.message);
+      } finally {
+        setLoading(btn, false);
+      }
+    }
+
+    async function handleUpdateAcademic(e) {
+      e.preventDefault();
+      const btn = document.getElementById('save-academic-btn');
+      const formData = new FormData(e.target);
+      const data = Object.fromEntries(formData.entries());
+      try {
+        setLoading(btn, true);
+        await api.users.updateMe(data);
+        alert('Academic info updated successfully!');
+      } catch (err) {
+        alert(err.message);
+      } finally {
+        setLoading(btn, false);
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', async () => {
+      const user = JSON.parse(localStorage.getItem('currentUser'));
+      document.getElementById('nav-mount').outerHTML = renderNav('settings', user);
+      initIcons();
+      loadSettings();
+    });
+  </script>
+</body>
+</html>

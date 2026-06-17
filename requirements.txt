@@ -3,11 +3,13 @@ uvicorn[standard]
 sqlalchemy
 psycopg2-binary
 python-jose[cryptography]
-passlib[bcrypt]
+passlib[argon2]
+argon2-cffi
 python-multipart
 pydantic[email]
 python-dotenv
-alembic
-bleach
 slowapi
+alembic
+cloudinary
+bleach
 limits

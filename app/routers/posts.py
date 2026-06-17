@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status, Query
+from fastapi import APIRouter, Depends, HTTPException, status, Query, UploadFile, File
 from sqlalchemy.orm import Session
 from typing import List, Optional
 from app.database import get_db
@@ -10,6 +10,7 @@ from app.models.community import CommunityMember
 from app.models.project_group import ProjectGroupMember
 from app.schemas.post import PostCreate, PostResponse
 from app.auth import get_current_user, get_current_user_optional
+from app.cloudinary_config import upload_file
 
 router = APIRouter(prefix="/posts", tags=["Posts"])
 
@@ -136,3 +137,28 @@ def delete_post(
 
     db.delete(post)
     db.commit()
+
+
+@router.post("/upload-image")
+async def upload_post_image(
+    file: UploadFile = File(...),
+    current_user: User = Depends(get_current_user)
+):
+    import os, uuid
+    ALLOWED = {".jpg", ".jpeg", ".png", ".gif", ".webp"}
+    ext = os.path.splitext(file.filename)[1].lower()
+    if ext not in ALLOWED:
+        raise HTTPException(status_code=400, detail="Only image files are allowed")
+
+    contents = await file.read()
+    if len(contents) > 5 * 1024 * 1024:
+        raise HTTPException(status_code=400, detail="Image too large (max 5MB)")
+
+    cloudinary_url = upload_file(
+        contents=contents,
+        folder="unihub/post-images",
+        resource_type="image",
+        public_id=f"post_{current_user.id}_{uuid.uuid4().hex[:8]}"
+    )
+
+    return {"image_url": cloudinary_url}

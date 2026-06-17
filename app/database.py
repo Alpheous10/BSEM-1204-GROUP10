@@ -8,7 +8,21 @@ load_dotenv()
 
 DATABASE_URL = os.getenv("DATABASE_URL")
 
-engine = create_engine(DATABASE_URL)
+# Supabase connection pool settings
+# pool_pre_ping keeps connections alive through Supabase's idle-timeout resets
+engine = create_engine(
+    DATABASE_URL,
+    pool_pre_ping=True,
+    pool_size=5,
+    max_overflow=10,
+    pool_timeout=30,
+    pool_recycle=300,
+    connect_args={
+        "sslmode": "require",
+        "connect_timeout": 10,
+    }
+)
+
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
 

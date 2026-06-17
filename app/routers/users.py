@@ -1,4 +1,5 @@
-from fastapi import APIRouter, Depends, HTTPException, status, Query
+import uuid
+from fastapi import APIRouter, Depends, HTTPException, status, Query, UploadFile, File
 from sqlalchemy.orm import Session
 from typing import List, Optional
 from app.database import get_db
@@ -11,12 +12,45 @@ from app.schemas.user import UserResponse, UserUpdate, UserPublicResponse
 from app.schemas.post import PostResponse
 from app.auth import get_current_user, get_current_user_optional
 from app.notifications_util import create_notification
+from app.cloudinary_config import upload_file
 
 router = APIRouter(prefix="/users", tags=["Users"])
 
 
 @router.get("/me", response_model=UserResponse)
 def get_me(current_user: User = Depends(get_current_user)):
+    return current_user
+
+
+@router.post("/me/avatar", response_model=UserResponse)
+async def upload_avatar(
+    file: UploadFile = File(...),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    import os
+    ALLOWED = {".jpg", ".jpeg", ".png", ".webp"}
+    ext = os.path.splitext(file.filename)[1].lower()
+    if ext not in ALLOWED:
+        raise HTTPException(status_code=400, detail="Only JPG, PNG, and WebP images are allowed")
+
+    contents = await file.read()
+    if len(contents) > 2 * 1024 * 1024:
+        raise HTTPException(status_code=400, detail="Image too large (max 2MB)")
+
+    cloudinary_url = upload_file(
+        contents=contents,
+        folder="unihub/avatars",
+        resource_type="image",
+        public_id=f"user_{current_user.id}_{uuid.uuid4().hex[:8]}",
+        transformation=[
+            {"width": 400, "height": 400, "crop": "fill", "gravity": "face"}
+        ]
+    )
+
+    current_user.avatar_url = cloudinary_url
+    db.commit()
+    db.refresh(current_user)
     return current_user
 
 

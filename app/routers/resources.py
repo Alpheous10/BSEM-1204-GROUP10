@@ -1,7 +1,5 @@
-import os
 import uuid
 from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File, Form, Query
-from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
 from typing import List, Optional
 from app.database import get_db
@@ -10,14 +8,14 @@ from app.models.community import CommunityMember
 from app.models.user import User
 from app.schemas.resource import ResourceResponse
 from app.auth import get_current_user
+from app.cloudinary_config import upload_file
 
 router = APIRouter(prefix="/resources", tags=["Resources"])
 
-UPLOAD_DIR = "uploads/resources"
-os.makedirs(UPLOAD_DIR, exist_ok=True)
-
-ALLOWED_EXTENSIONS = {".pdf", ".doc", ".docx", ".ppt", ".pptx", ".xls", ".xlsx", ".png", ".jpg", ".jpeg", ".gif", ".txt"}
-MAX_FILE_SIZE = 20 * 1024 * 1024  # 20 MB
+ALLOWED_EXTENSIONS = {".pdf", ".doc", ".docx", ".ppt", ".pptx",
+                      ".xls", ".xlsx", ".png", ".jpg", ".jpeg",
+                      ".gif", ".webp", ".txt"}
+MAX_FILE_SIZE = 20 * 1024 * 1024  # 20MB
 
 
 def build_resource_response(resource) -> ResourceResponse:
@@ -28,7 +26,7 @@ def build_resource_response(resource) -> ResourceResponse:
         file_name=resource.file_name,
         file_type=resource.file_type,
         file_size=resource.file_size,
-        file_url=f"/uploads/resources/{os.path.basename(resource.file_path)}",
+        file_url=resource.file_path,
         community_id=resource.community_id,
         uploaded_by=resource.uploaded_by,
         created_at=resource.created_at
@@ -44,6 +42,7 @@ async def upload_resource(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
+    import os
     ext = os.path.splitext(file.filename)[1].lower()
     if ext not in ALLOWED_EXTENSIONS:
         raise HTTPException(status_code=400, detail=f"File type '{ext}' is not allowed")
@@ -54,22 +53,26 @@ async def upload_resource(
             CommunityMember.user_id == current_user.id
         ).first()
         if not member:
-            raise HTTPException(status_code=403, detail="You must join this community to upload resources to it")
+            raise HTTPException(status_code=403,
+                detail="You must join this community to upload resources to it")
 
     contents = await file.read()
     if len(contents) > MAX_FILE_SIZE:
         raise HTTPException(status_code=400, detail="File too large (max 20MB)")
 
-    stored_name = f"{uuid.uuid4().hex}{ext}"
-    file_path = os.path.join(UPLOAD_DIR, stored_name)
-    with open(file_path, "wb") as f:
-        f.write(contents)
+    public_id = f"{uuid.uuid4().hex}"
+    cloudinary_url = upload_file(
+        contents=contents,
+        folder="unihub/resources",
+        resource_type="auto",
+        public_id=public_id
+    )
 
     resource = Resource(
         title=title,
         description=description,
         file_name=file.filename,
-        file_path=file_path,
+        file_path=cloudinary_url,
         file_type=ext.lstrip("."),
         file_size=len(contents),
         community_id=community_id,
@@ -92,7 +95,6 @@ def get_resources(
     query = db.query(Resource)
     if community_id is not None:
         query = query.filter(Resource.community_id == community_id)
-
     resources = query.order_by(Resource.created_at.desc()).offset(skip).limit(limit).all()
     return [build_resource_response(r) for r in resources]
 
@@ -107,12 +109,11 @@ def get_resource(resource_id: int, db: Session = Depends(get_db)):
 
 @router.get("/{resource_id}/download")
 def download_resource(resource_id: int, db: Session = Depends(get_db)):
+    from fastapi.responses import RedirectResponse
     resource = db.query(Resource).filter(Resource.id == resource_id).first()
     if not resource:
         raise HTTPException(status_code=404, detail="Resource not found")
-    if not os.path.exists(resource.file_path):
-        raise HTTPException(status_code=404, detail="File missing from storage")
-    return FileResponse(resource.file_path, filename=resource.file_name)
+    return RedirectResponse(url=resource.file_path)
 
 
 @router.delete("/{resource_id}", status_code=status.HTTP_204_NO_CONTENT)
@@ -127,9 +128,6 @@ def delete_resource(
 
     if resource.uploaded_by != current_user.id and not current_user.is_admin:
         raise HTTPException(status_code=403, detail="Not authorized to delete this resource")
-
-    if os.path.exists(resource.file_path):
-        os.remove(resource.file_path)
 
     db.delete(resource)
     db.commit()

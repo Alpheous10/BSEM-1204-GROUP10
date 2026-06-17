@@ -2,6 +2,14 @@
 // APP MODULE - UniHub State & Logic
 // ================================================================
 
+// Ping the backend on app load to wake Render from sleep.
+// This runs silently in the background - no UI impact.
+(function pingBackend() {
+  fetch(`${CONFIG.BASE_URL}/health`, { method: 'GET' })
+    .then(() => console.log('Backend is awake'))
+    .catch(() => console.log('Backend waking up...'));
+})();
+
 let currentUser = null;
 let currentPostImageUrl = null; // Store the uploaded image URL
 

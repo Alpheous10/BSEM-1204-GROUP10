@@ -6,7 +6,7 @@
 // Base URL points to the FastAPI server.
 // ================================================================
 
-const BASE_URL = 'http://localhost:8002';
+const BASE_URL = CONFIG.BASE_URL;
 
 // ── Token helpers ────────────────────────────────────────────────
 function getToken() {
@@ -260,7 +260,7 @@ const api = {
   },
 
   uploads: {
-    avatar: (file) => uploadFile('/uploads/avatar', file),
-    postImage: (file) => uploadFile('/uploads/post-image', file),
+    avatar: (file) => uploadFile('/users/me/avatar', file),
+    postImage: (file) => uploadFile('/posts/upload-image', file),
   },
 };
